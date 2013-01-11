@@ -179,6 +179,7 @@ Source2: config-%{version}-i686-NONPAE
 Source3: config-%{version}-x86_64
 Source4: config-%{version}-xenomai-i686
 Source5: config-%{version}-xenomai-x86_64
+Source6: kconfigtool.py
 
 %description
 This package provides the Linux kernel (vmlinuz), the core of any
@@ -315,9 +316,9 @@ This package provides the perf tool and the supporting documentation.
 %setup -q -n %{name}-%{version} -c
 %{__mv} linux-%{LKAver} linux-%{version}-%{release}.%{_target_cpu}
 pushd linux-%{version}-%{release}.%{_target_cpu} > /dev/null
-%{__cp} %{SOURCE1} . && cat %{SOURCE4} >> $(basename %{SOURCE1})
-%{__cp} %{SOURCE2} . && cat %{SOURCE4} >> $(basename %{SOURCE2})
-%{__cp} %{SOURCE3} . && cat %{SOURCE5} >> $(basename %{SOURCE3})
+%{SOURCE6} -m %{SOURCE4} %{SOURCE1} >> $(basename %{SOURCE1})
+%{SOURCE6} -m %{SOURCE4} %{SOURCE2} >> $(basename %{SOURCE2})
+%{SOURCE6} -m %{SOURCE5} %{SOURCE3} >> $(basename %{SOURCE3})
 patch -p1 < %{_usrsrc}/xenomai/ipipe-core-%{xenomai_patch_version}.patch
 popd > /dev/null
 
