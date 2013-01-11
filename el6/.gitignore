@@ -1,0 +1,8 @@
+# sources
+/linux-*.tar.bz2
+
+# fedpkg build artifacts
+/.build-*.log
+/kernel-xenomai-*/
+/x86_64/
+/kernel-xenomai-*.src.rpm

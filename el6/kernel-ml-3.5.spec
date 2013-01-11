@@ -3,6 +3,10 @@
 # Define the version of the Linux Kernel Archive tarball.
 %define LKAver 3.5.5
 
+# Define the Xenomai and ipipe-core patch versions
+%define xenomai_version 2.6.2
+%define xenomai_patch_version 3.5.3-x86-2
+
 # Define the buildid, if required.
 #define buildid .
 
@@ -83,7 +87,7 @@
 %endif
 
 # Set pkg_release.
-%define pkg_release 1%{?buildid}%{?dist}
+%define pkg_release 2%{?buildid}%{?dist}
 
 #
 # Three sets of minimum package version requirements in the form of Conflicts.
@@ -117,8 +121,8 @@
 %define initrd_prereq mkinitrd >= 6.0.61-1
 %endif
 
-Name: kernel-ml
-Summary: The Linux kernel. (The core of any Linux-based operating system.)
+Name: kernel-xenomai
+Summary: The Linux kernel, patched for Xenomai
 Group: System Environment/Kernel
 License: GPLv2
 URL: http://www.kernel.org/
@@ -164,6 +168,7 @@ BuildRequires: elfutils-libelf-devel zlib-devel binutils-devel newt-devel
 BuildRequires: python-devel perl(ExtUtils::Embed) gtk2-devel bison 
 %endif
 BuildRequires: python
+BuildRequires: xenomai-devel = %{xenomai_version}
 
 BuildConflicts: rhbuildsys(DiskFree) < 7Gb
 
@@ -172,11 +177,15 @@ Source0: ftp://ftp.kernel.org/pub/linux/kernel/v3.x/linux-%{LKAver}.tar.bz2
 Source1: config-%{version}-i686
 Source2: config-%{version}-i686-NONPAE
 Source3: config-%{version}-x86_64
+Source4: config-%{version}-xenomai-i686
+Source5: config-%{version}-xenomai-x86_64
 
 %description
 This package provides the Linux kernel (vmlinuz), the core of any
 Linux-based operating system. The kernel handles the basic functions
 of the OS: memory allocation, process allocation, device I/O, etc.
+
+This kernel is patched with the Xenomai real time system.
 
 %package devel
 Summary: Development package for building kernel modules to match the kernel.
@@ -306,9 +315,10 @@ This package provides the perf tool and the supporting documentation.
 %setup -q -n %{name}-%{version} -c
 %{__mv} linux-%{LKAver} linux-%{version}-%{release}.%{_target_cpu}
 pushd linux-%{version}-%{release}.%{_target_cpu} > /dev/null
-%{__cp} %{SOURCE1} .
-%{__cp} %{SOURCE2} .
-%{__cp} %{SOURCE3} .
+%{__cp} %{SOURCE1} . && cat %{SOURCE4} >> $(basename %{SOURCE1})
+%{__cp} %{SOURCE2} . && cat %{SOURCE4} >> $(basename %{SOURCE2})
+%{__cp} %{SOURCE3} . && cat %{SOURCE5} >> $(basename %{SOURCE3})
+patch -p1 < %{_usrsrc}/xenomai/ipipe-core-%{xenomai_patch_version}.patch
 popd > /dev/null
 
 %build
@@ -770,6 +780,13 @@ fi
 %endif
 
 %changelog
+* Thu Jan 10 2013 John Morris <john@zultron.com> - 3.5.5-2.el6.elrepo
+- Added Xenomai real time system
+- Rename package to kernel-xenomai
+- BR xenomai-devel, and apply patch
+- Separate Xeno kernel configs appended to upstream config during
+  build
+
 * Thu Oct 04 2012 Alan Bartlett <ajb@elrepo.org> - 3.5.5-1.el6.elrepo
 - Updated to the 3.5.5 version source tarball.
 
