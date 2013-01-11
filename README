@@ -1,1 +1,5 @@
-This is the ELRepo kernel-ml git repository.
+This is a fork of the ELRepo kernel-ml git repository, patched for the
+Xenomai real time framework.
+
+Only el6 is supported.  The package requires the xenomai-devel package
+for the Xenomai patches.
