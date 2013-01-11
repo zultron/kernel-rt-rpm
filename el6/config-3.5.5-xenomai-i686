@@ -199,7 +199,8 @@ CONFIG_IPIPE=y
 # SMI may be involved in thermal throttling of the CPU. Thus,
 # switching it off can cause hardware damage in overheat situations.
 #
-# (CONFIG_XENO_HW_SMI_WORKAROUND is not set, see above)
+CONFIG_XENO_HW_SMI_WORKAROUND=y
+CONFIG_XENO_HW_SMI_ALL=y
 #
 # Just like CONFIG_ACPI_PROCESSOR, this idle driver sends the CPU into
 # deep C states, also causing huge latencies because the APIC timer
