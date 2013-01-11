@@ -168,7 +168,7 @@ BuildRequires: elfutils-libelf-devel zlib-devel binutils-devel newt-devel
 BuildRequires: python-devel perl(ExtUtils::Embed) gtk2-devel bison 
 %endif
 BuildRequires: python
-BuildRequires: xenomai-devel = %{xenomai_version}
+BuildRequires: xenomai-devel >= %{xenomai_version}
 
 BuildConflicts: rhbuildsys(DiskFree) < 7Gb
 
