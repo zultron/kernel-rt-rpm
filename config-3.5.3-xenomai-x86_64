@@ -34,8 +34,18 @@ CONFIG_XENO_OPT_PIPE=y
 CONFIG_XENO_OPT_VFILE=y
 CONFIG_XENO_OPT_PIPE_NRDEV=32
 CONFIG_XENO_OPT_REGISTRY_NRSLOTS=512
-CONFIG_XENO_OPT_SYS_HEAPSZ=256
-CONFIG_XENO_OPT_SYS_STACKPOOLSZ=128
+# getting this during xeno-regression-test switchtest:
+# Xenomai: xnthread_init: no stack for kernel thread 'rtk4/1'
+#     (raise CONFIG_XENO_OPT_SYS_STACKPOOLSZ)
+# From regression test:
+# ioctl(RTTST_RTIOC_SWTEST_CREATE_KTASK): Cannot allocate memory
+# Related:
+# http://www.mail-archive.com/xenomai-help@gna.org/msg03869.html
+# Quadrupling both params to be safe
+#CONFIG_XENO_OPT_SYS_HEAPSZ=256
+CONFIG_XENO_OPT_SYS_HEAPSZ=1024
+#CONFIG_XENO_OPT_SYS_STACKPOOLSZ=128
+CONFIG_XENO_OPT_SYS_STACKPOOLSZ=512
 CONFIG_XENO_OPT_SEM_HEAPSZ=12
 CONFIG_XENO_OPT_GLOBAL_SEM_HEAPSZ=12
 CONFIG_XENO_OPT_STATS=y
@@ -162,7 +172,8 @@ CONFIG_XENO_OPT_BUFP_NRPORT=32
 # IPIPE options
 #
 CONFIG_IPIPE=y
-# CONFIG_IPIPE_LEGACY is not set
+# memleak recommends this; why?
+CONFIG_IPIPE_LEGACY=y
 # CONFIG_IPIPE_DEBUG is not set
 #
 #
@@ -200,6 +211,7 @@ CONFIG_IPIPE=y
 # switching it off can cause hardware damage in overheat situations.
 #
 CONFIG_XENO_HW_SMI_WORKAROUND=y
+CONFIG_XENO_HW_SMI_ALL=y
 #
 # Just like CONFIG_ACPI_PROCESSOR, this idle driver sends the CPU into
 # deep C states, also causing huge latencies because the APIC timer
