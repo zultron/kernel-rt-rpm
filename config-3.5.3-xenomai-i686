@@ -172,7 +172,8 @@ CONFIG_XENO_OPT_BUFP_NRPORT=32
 # IPIPE options
 #
 CONFIG_IPIPE=y
-# CONFIG_IPIPE_LEGACY is not set
+# memleak recommends this; why?
+CONFIG_IPIPE_LEGACY=y
 # CONFIG_IPIPE_DEBUG is not set
 #
 #
@@ -217,3 +218,20 @@ CONFIG_XENO_HW_SMI_ALL=y
 # that Xenomai uses may not fire anymore.
 #
 # CONFIG_INTEL_IDLE is not set
+#
+############################################
+# Modifications to upstream config
+#
+# CONFIG_CPUMASK_OFFSTACK disables functions that pass cpumasks on
+# the stack.  Xenomai uses set_cpus_allowed(), which takes a cpumask
+# as an argument, in many places.  Disable this config and related
+# configs.
+#
+# CONFIG_CPUMASK_OFFSTACK is not set
+#
+# CONFIG_MAXSMP turns CONFIG_CPUMASK_OFFSTACK on automatically
+# CONFIG_MAXSMP is not set
+#
+# Upstream config sets CONFIG_NR_CPUS to 1024, which make config seems
+# not to like when CONFIG_MAXSMP is off
+CONFIG_NR_CPUS=256
