@@ -235,3 +235,9 @@ CONFIG_XENO_HW_SMI_ALL=y
 # Upstream config sets CONFIG_NR_CPUS to 1024, which make config seems
 # not to like when CONFIG_MAXSMP is off
 CONFIG_NR_CPUS=256
+#
+# Jan's fix for x86 arch kernel oops:
+# kernel BUG at mm/mmap.c:2313!
+# invalid opcode: 0000 [#2] SMP 
+# http://www.xenomai.org/pipermail/xenomai-help/2011-06/msg00197.html
+# CONFIG_TRANSPARENT_HUGEPAGE is not set
