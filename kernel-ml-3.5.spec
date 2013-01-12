@@ -1,7 +1,7 @@
 %global __spec_install_pre %{___build_pre}
 
 # Define the version of the Linux Kernel Archive tarball.
-%define LKAver 3.5.5
+%define LKAver 3.5.3
 
 # Define the Xenomai and ipipe-core patch versions
 %define xenomai_version 2.6.2
@@ -87,7 +87,7 @@
 %endif
 
 # Set pkg_release.
-%define pkg_release 2%{?buildid}%{?dist}
+%define pkg_release 1%{?buildid}%{?dist}
 
 #
 # Three sets of minimum package version requirements in the form of Conflicts.
@@ -781,7 +781,10 @@ fi
 %endif
 
 %changelog
-* Thu Jan 10 2013 John Morris <john@zultron.com> - 3.5.5-2.el6.elrepo
+* Fri Jan 11 2013 John Morris <john@zultron.com> - 3.5.3-1.el6
+- Back down to 3.5.3 to match I-pipe patch
+
+* Thu Jan 10 2013 John Morris <john@zultron.com> - 3.5.5-2.el6
 - Added Xenomai real time system
 - Rename package to kernel-xenomai
 - BR xenomai-devel, and apply patch
