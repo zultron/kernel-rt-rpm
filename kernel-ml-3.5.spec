@@ -321,7 +321,8 @@ pushd linux-%{version}-%{release}.%{_target_cpu} > /dev/null
 %{SOURCE6} -m %{SOURCE4} %{SOURCE1} >> $(basename %{SOURCE1})
 %{SOURCE6} -m %{SOURCE4} %{SOURCE2} >> $(basename %{SOURCE2})
 %{SOURCE6} -m %{SOURCE5} %{SOURCE3} >> $(basename %{SOURCE3})
-patch -p1 < %{_usrsrc}/xenomai/ipipe-core-%{xenomai_patch_version}.patch
+cat %{_usrsrc}/xenomai/ipipe-core-%{xenomai_patch_version}.patch | \
+    patch -p1
 popd > /dev/null
 
 %build
