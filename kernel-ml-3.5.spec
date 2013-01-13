@@ -1,11 +1,13 @@
 %global __spec_install_pre %{___build_pre}
 
 # Define the version of the Linux Kernel Archive tarball.
-%define LKAver 3.5.3
+%define LKAver 3.5.7
 
 # Define the Xenomai and ipipe-core patch versions
 %define xenomai_version 2.6.2
-%define xenomai_patch_version 3.5.3-x86-2
+# testing; from ipipe-gch.git:  git diff v3.5.7..for-core-3.5.7
+%define xenomai_patch_version 3.5.7-x86-0.120112git5250eb
+#%%define xenomai_patch_version 3.5.3-x86-2
 
 # Define the buildid, if required.
 #define buildid .
@@ -781,6 +783,11 @@ fi
 %endif
 
 %changelog
+* Sat Jan 12 2013 John Morris <john@zultron.com> - 3.5.7-1
+- Update to 3.5.7 for testing against Xenomai ipipe-gch.git
+  for-core-3.5.7 branch
+- patch from ipipe-gch.git:  git diff v3.5.7..for-core-3.5.7
+
 * Fri Jan 11 2013 John Morris <john@zultron.com> - 3.5.3-1.el6
 - Back down to 3.5.3 to match I-pipe patch
 
