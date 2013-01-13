@@ -3,3 +3,11 @@ Xenomai real time framework.
 
 Only el6 is supported.  The package requires the xenomai-devel package
 for the Xenomai patches.
+
+This package is experimental.  After any new build or install on any
+new machine, please run the regression tests:
+
+sudo xeno-regression-test -l "/usr/lib64/xenomai/dohell \
+        -m /tmp 100" -t 2
+
+Be sure to check dmesg for kernel OOPSes or any problems
