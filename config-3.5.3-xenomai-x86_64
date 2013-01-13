@@ -245,3 +245,9 @@ CONFIG_NR_CPUS=256
 # invalid opcode: 0000 [#2] SMP 
 # http://www.xenomai.org/pipermail/xenomai-help/2011-06/msg00197.html
 # CONFIG_TRANSPARENT_HUGEPAGE is not set
+#
+# Gilles says this improves latencies
+# http://www.xenomai.org/pipermail/xenomai/2013-January/027272.html
+# CONFIG_FTRACE is not set
+# This apparently depends on !FTRACE
+# CONFIG_KMEMCHECK is not set
