@@ -6,7 +6,7 @@
 # Define the Xenomai and ipipe-core patch versions
 %define xenomai_version 2.6.2
 # testing; from ipipe-gch.git:  git diff v3.5.7..for-core-3.5.7
-%define xenomai_patch_version 3.5.7-x86-0.120112git5250eb
+%define xenomai_patch_version 3.5.7-x86-0.120113git210ed428
 #%%define xenomai_patch_version 3.5.3-x86-2
 
 # Define the buildid, if required.
@@ -784,6 +784,9 @@ fi
 %endif
 
 %changelog
+* Sun Jan 13 2013 John Morris <john@zultron.com> - 3.5.7-1
+- Update to xenomai_patch_version 3.5.7-x86-0.120112git5250eb
+
 * Sat Jan 12 2013 John Morris <john@zultron.com> - 3.5.7-1
 - Update to 3.5.7 for testing against Xenomai ipipe-gch.git
   for-core-3.5.7 branch
