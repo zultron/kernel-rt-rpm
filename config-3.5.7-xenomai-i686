@@ -245,7 +245,13 @@ CONFIG_IPIPE_LEGACY=y
 # CONFIG_INTEL_IDLE is not set
 #
 ############################################
-# Modifications to upstream config
+# Other changes
+#
+# Disable FTRACE to improve latencies
+# http://www.xenomai.org/pipermail/xenomai/2013-January/027272.html
+# CONFIG_FTRACE is not set
+# and dependent option
+# CONFIG_KMEMCHECK is not set
 #
 # CONFIG_CPUMASK_OFFSTACK disables functions that pass cpumasks on
 # the stack.  Xenomai uses set_cpus_allowed(), which takes a cpumask
