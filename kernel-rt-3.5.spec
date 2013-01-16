@@ -362,7 +362,7 @@ cp $RPM_BUILD_DIR/config-%{version}-* configs
 
 # apply i-pipe patch
 PATCH=%{_usrsrc}/xenomai/ipipe-core-%{xenomai_patch_version}.patch
-patch -p1 < $PATCH
+patch -p1 -s < $PATCH
 popd > /dev/null
 
 %build
