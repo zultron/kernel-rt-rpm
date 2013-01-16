@@ -4,9 +4,9 @@
 %define LKAver 3.5.7
 
 # Define the Xenomai and ipipe-core patch versions
-%define xenomai_version 2.6.2
+%define xenomai_version 2.6.3
 # testing; from ipipe-gch.git:  git diff v3.5.7..for-core-3.5.7
-%define xenomai_patch_version 3.5.7-x86-0.120113git210ed428
+%define xenomai_patch_version 3.5.7-x86-0.120109gitfde77b2e
 #%%define xenomai_patch_version 3.5.3-x86-2
 
 # Define the buildid, if required.
@@ -16,15 +16,19 @@
 # Use either --without <option> on your rpmbuild command line
 # or force the values to 0, here, to disable them.
 
-# PAE kernel-ml
-%define with_std          %{?_without_std:          0} %{?!_without_std:          1}
-# NONPAE kernel-ml
-%define with_nonpae       %{?_without_nonpae:       0} %{?!_without_nonpae:       1}
-# kernel-ml-doc
+# PAE kernel-rt
+%define with_std          %{?_without_std:          0} %{?!_without_std:          0}
+# NONPAE kernel-rt
+%define with_nonpae       %{?_without_nonpae:       0} %{?!_without_nonpae:       0}
+# Xenomai kernel-rt
+%define with_xeno         %{?_without_xeno:         0} %{?!_without_xeno:         1}
+# NONPAE Xeno kernel-rt
+%define with_xeno_nonpae  %{?_without_xeno_nonpae:  0} %{?!_without_xeno_nonpae:  1}
+# kernel-rt-doc
 %define with_doc          %{?_without_doc:          0} %{?!_without_doc:          1}
-# kernel-ml-headers
+# kernel-rt-headers
 %define with_headers      %{?_without_headers:      0} %{?!_without_headers:      1}
-# kernel-ml-firmware
+# kernel-rt-firmware
 %define with_firmware     %{?_without_firmware:     0} %{?!_without_firmware:     1}
 # perf subpackage
 %define with_perf         %{?_without_perf:         0} %{?!_without_perf:         1}
@@ -210,17 +214,17 @@ sufficient to build modules against the kernel package.
 Summary: The Linux kernel for non-PAE capable processors.
 Group: System Environment/Kernel
 Provides: kernel = %{version}-%{release}
-Provides: kernel-%{_target_cpu} = %{version}-%{release}NONPAE
+Provides: kernel-%{_target_cpu} = %{version}-%{release}.NONPAE
 Provides: kernel-NONPAE = %{version}-%{release}
-Provides: kernel-NONPAE-%{_target_cpu} = %{version}-%{release}NONPAE
+Provides: kernel-NONPAE-%{_target_cpu} = %{version}-%{release}.NONPAE
 Provides: kernel-drm = 4.3.0
 Provides: kernel-drm-nouveau = 16
 Provides: kernel-modeset = 1
 Provides: kernel-uname-r = %{version}-%{release}.%{_target_cpu}
 Provides: kernel-rt = %{version}-%{release}
-Provides: kernel-rt-%{_target_cpu} = %{version}-%{release}NONPAE
+Provides: kernel-rt-%{_target_cpu} = %{version}-%{release}.NONPAE
 Provides: kernel-rt-NONPAE = %{version}-%{release}
-Provides: kernel-rt-NONPAE-%{_target_cpu} = %{version}-%{release}NONPAE
+Provides: kernel-rt-NONPAE-%{_target_cpu} = %{version}-%{release}.NONPAE
 Provides: kernel-rt-drm = 4.3.0
 Provides: kernel-rt-drm-nouveau = 16
 Provides: kernel-rt-modeset = 1
@@ -246,14 +250,121 @@ It can only address up to 4GB of memory.
 Summary: Development package for building kernel modules to match the non-PAE kernel.
 Group: System Environment/Kernel
 Provides: kernel-NONPAE-devel-%{_target_cpu} = %{version}-%{release}
-Provides: kernel-NONPAE-devel = %{version}-%{release}NONPAE
+Provides: kernel-NONPAE-devel = %{version}-%{release}.NONPAE
 Provides: kernel-NONPAE-devel-uname-r = %{version}-%{release}.%{_target_cpu}
 Provides: kernel-rt-NONPAE-devel-%{_target_cpu} = %{version}-%{release}
-Provides: kernel-rt-NONPAE-devel = %{version}-%{release}NONPAE
+Provides: kernel-rt-NONPAE-devel = %{version}-%{release}.NONPAE
 Provides: kernel-rt-NONPAE-devel-uname-r = %{version}-%{release}.%{_target_cpu}
 Requires(pre): /usr/bin/find
 AutoReqProv: no
 %description NONPAE-devel
+This package provides the kernel header files and makefiles
+sufficient to build modules against the kernel package.
+%endif
+
+%if %{with_xeno}
+%package xenomai
+Summary: The Linux kernel patched for the Xenomai real time system
+Group: System Environment/Kernel
+Provides: kernel = %{version}-%{release}
+Provides: kernel-%{_target_cpu} = %{version}-%{release}.xenomai
+Provides: kernel-xenomai = %{version}-%{release}
+Provides: kernel-xenomai-%{_target_cpu} = %{version}-%{release}.xenomai
+Provides: kernel-drm = 4.3.0
+Provides: kernel-drm-nouveau = 16
+Provides: kernel-modeset = 1
+Provides: kernel-uname-r = %{version}-%{release}.%{_target_cpu}
+Provides: kernel-rt = %{version}-%{release}
+Provides: kernel-rt-%{_target_cpu} = %{version}-%{release}.xenomai
+Provides: kernel-rt-xenomai = %{version}-%{release}
+Provides: kernel-rt-xenomai-%{_target_cpu} = %{version}-%{release}.xenomai
+Provides: kernel-rt-drm = 4.3.0
+Provides: kernel-rt-drm-nouveau = 16
+Provides: kernel-rt-modeset = 1
+Provides: kernel-rt-uname-r = %{version}-%{release}.%{_target_cpu}
+Requires(pre): %{kernel_prereq}
+Requires(pre): %{initrd_prereq}
+Requires(post): /sbin/new-kernel-pkg
+Requires(preun): /sbin/new-kernel-pkg
+Conflicts: %{kernel_dot_org_conflicts}
+Conflicts: %{package_conflicts}
+Conflicts: %{kernel_headers_conflicts}
+# We can't let RPM do the dependencies automatically because it'll then pick up
+# a correct but undesirable perl dependency from the module headers which
+# isn't required for the kernel-rt proper to function.
+AutoReq: no
+AutoProv: yes
+%description xenomai
+This package provides a version of the Linux kernel suitable for
+processors without the Physical Address Extension (PAE) capability.
+It can only address up to 4GB of memory.
+
+%package xenomai-devel
+Summary: Development package for building kernel modules to match the non-PAE kernel.
+Group: System Environment/Kernel
+Provides: kernel-xenomai-devel-%{_target_cpu} = %{version}-%{release}
+Provides: kernel-xenomai-devel = %{version}-%{release}.xenomai
+Provides: kernel-xenomai-devel-uname-r = %{version}-%{release}.%{_target_cpu}
+Provides: kernel-rt-xenomai-devel-%{_target_cpu} = %{version}-%{release}
+Provides: kernel-rt-xenomai-devel = %{version}-%{release}.xenomai
+Provides: kernel-rt-xenomai-devel-uname-r = %{version}-%{release}.%{_target_cpu}
+Requires(pre): /usr/bin/find
+AutoReqProv: no
+%description xenomai-devel
+This package provides the kernel header files and makefiles
+sufficient to build modules against the kernel package.
+%endif
+
+%if %{with_xeno_nonpae}
+%package xenomai-nonpae
+Summary: The Linux kernel patched for the Xenomai real time system
+Group: System Environment/Kernel
+Provides: kernel = %{version}-%{release}
+Provides: kernel-%{_target_cpu} = %{version}-%{release}.xenomai.nonpae
+Provides: kernel-xenomai-nonpae = %{version}-%{release}
+Provides: kernel-xenomai-nonpae-%{_target_cpu} = %{version}-%{release}.xenomai.nonpae
+Provides: kernel-drm = 4.3.0
+Provides: kernel-drm-nouveau = 16
+Provides: kernel-modeset = 1
+Provides: kernel-uname-r = %{version}-%{release}.%{_target_cpu}
+Provides: kernel-rt = %{version}-%{release}
+Provides: kernel-rt-%{_target_cpu} = %{version}-%{release}.xenomai.nonpae
+Provides: kernel-rt-xenomai-nonpae = %{version}-%{release}
+Provides: kernel-rt-xenomai-nonpae-%{_target_cpu} = %{version}-%{release}.xenomai.nonpae
+Provides: kernel-rt-drm = 4.3.0
+Provides: kernel-rt-drm-nouveau = 16
+Provides: kernel-rt-modeset = 1
+Provides: kernel-rt-uname-r = %{version}-%{release}.%{_target_cpu}
+Requires(pre): %{kernel_prereq}
+Requires(pre): %{initrd_prereq}
+Requires(post): /sbin/new-kernel-pkg
+Requires(preun): /sbin/new-kernel-pkg
+Conflicts: %{kernel_dot_org_conflicts}
+Conflicts: %{package_conflicts}
+Conflicts: %{kernel_headers_conflicts}
+# We can't let RPM do the dependencies automatically because it'll then pick up
+# a correct but undesirable perl dependency from the module headers which
+# isn't required for the kernel-rt proper to function.
+AutoReq: no
+AutoProv: yes
+%description xenomai-nonpae
+This package provides a version of the Linux kernel suitable for
+processors without the Physical Address Extension (PAE) capability.
+It can only address up to 4GB of memory.
+
+%package xenomai-nonpae-devel
+Summary: Development package for building kernel modules to match the non-PAE kernel.
+Group: System Environment/Kernel
+Provides: kernel-xenomai-nonpae-devel-%{_target_cpu} = %{version}-%{release}
+Provides: kernel-xenomai-nonpae-devel = %{version}-%{release}.xenomai.nonpae
+Provides: kernel-xenomai-nonpae-devel-uname-r = %{version}-%{release}.%{_target_cpu}
+Provides: kernel-rt-xenomai-nonpae-devel-%{_target_cpu} = %{version}-%{release}
+Provides: kernel-rt-xenomai-nonpae-devel = %{version}-%{release}.xenomai.nonpae
+Provides: kernel-rt-xenomai-nonpae-devel-uname-r = %{version}-%{release}.%{_target_cpu}
+Requires(pre): /usr/bin/find
+AutoReqProv: no
+
+%description xenomai-nonpae-devel
 This package provides the kernel header files and makefiles
 sufficient to build modules against the kernel package.
 %endif
@@ -318,30 +429,44 @@ This package provides the perf tool and the supporting documentation.
 %setup -q -n %{name}-%{version} -c
 %{__mv} linux-%{LKAver} linux-%{version}-%{release}.%{_target_cpu}
 pushd linux-%{version}-%{release}.%{_target_cpu} > /dev/null
-%{SOURCE6} -m %{SOURCE4} %{SOURCE1} >> $(basename %{SOURCE1})
-%{SOURCE6} -m %{SOURCE4} %{SOURCE2} >> $(basename %{SOURCE2})
-%{SOURCE6} -m %{SOURCE5} %{SOURCE3} >> $(basename %{SOURCE3})
-cat %{_usrsrc}/xenomai/ipipe-core-%{xenomai_patch_version}.patch | \
-    patch -p1
+
+# copy raw configs to build directory
+mkdir configs
+cp $RPM_BUILD_DIR/config-%{version}-* configs
+
+# apply i-pipe patch
+PATCH=%{_usrsrc}/xenomai/ipipe-core-%{xenomai_patch_version}.patch
+patch -p1 < $PATCH
 popd > /dev/null
 
 %build
 BuildKernel() {
-    Flavour=$1
-
     %{__make} -s mrproper
 
+    # build flavour config files
+    Dash_Flavour=""
+    pushd configs
+    %{__cp} config-%{version}-%{_target_cpu} \
+        ../config-%{version}-%{_target_cpu}.intermediate
+    for f in $*; do
+	%{__python} %{SOURCE6} -m \
+	  config-%{version}-${f}-%{_target_cpu} \
+	  ../config-%{version}${Dash_Flavour}-%{_target_cpu}.intermediate > \
+	  ../config-%{version}${Dash_Flavour}-${f}-%{_target_cpu}.intermediate
+        Dash_Flavour="${Dash_Flavour}-${f}"
+    done
+    popd
+    Flavour=${Dash_Flavour#-}
+
     # Select the correct flavour configuration file.
-    if [ -z "${Flavour}" ]; then
-      %{__cp} config-%{version}-%{_target_cpu} .config
-    else
-      %{__cp} config-%{version}-%{_target_cpu}-${Flavour} .config
-    fi
+    %{__cp} config-%{version}${Dash_Flavour}-%{_target_cpu}.intermediate \
+	.config
 
     %define KVRFA %{version}-%{release}${Flavour}.%{_target_cpu}
 
     # Correctly set the EXTRAVERSION string in the main Makefile.
-    %{__perl} -p -i -e "s/^EXTRAVERSION.*/EXTRAVERSION = -%{release}${Flavour}.%{_target_cpu}/" Makefile
+    EXTRAVERSION=-%{release}${Dash_Flavour//-/.}.%{_target_cpu}
+    %{__sed} -i "/^EXTRAVERSION/ s/=.*/= $EXTRAVERSION/" Makefile
 
     %{__make} -s CONFIG_DEBUG_SECTION_MISMATCH=y ARCH=%{buildarch} V=1 \
 	%{?_smp_mflags} bzImage
@@ -537,6 +662,14 @@ BuildKernel
 BuildKernel NONPAE
 %endif
 
+%if %{with_xeno}
+BuildKernel xenomai
+%endif
+
+%if %{with_xeno_nonpae}
+BuildKernel NONPAE xenomai
+%endif
+
 %if %{with_doc}
 # Make the HTML and man pages.
 %{__make} -s -j1 htmldocs mandocs 2> /dev/null || false
@@ -650,7 +783,7 @@ fi
 %post
 if [ `uname -i` == "i386" ] && [ -f /etc/sysconfig/kernel ]; then
     /bin/sed -r -i -e \
-        's/^DEFAULTKERNEL=kernel-rt-NONPAE$/DEFAULTKERNEL=kernel-rt/' \
+        's/^DEFAULTKERNEL=kernel-rt-.*/DEFAULTKERNEL=kernel-rt/' \
 	/etc/sysconfig/kernel || exit $?
 fi
 if grep --silent '^hwcap 0 nosegneg$' /etc/ld.so.conf.d/kernel-*.conf \
@@ -739,6 +872,104 @@ if [ -f /etc/sysconfig/kernel ]; then
 fi
 if [ "$HARDLINK" != "no" -a -x /usr/sbin/hardlink ]; then
     pushd /usr/src/kernels/%{version}-%{release}NONPAE.%{_target_cpu} \
+	> /dev/null
+    /usr/bin/find . -type f | while read f; do
+        hardlink -c /usr/src/kernels/*.fc*.*/$f $f
+    done
+    popd > /dev/null
+fi
+%endif
+
+%if %{with_xeno}
+%posttrans xenomai
+NEWKERNARGS=""
+(/sbin/grubby --info=`/sbin/grubby --default-kernel`) 2> /dev/null | \
+    grep -q crashkernel
+if [ $? -ne 0 ]; then
+    NEWKERNARGS="--kernel-args=\"crashkernel=auto\""
+fi
+%if %{with_dracut}
+/sbin/new-kernel-pkg --package kernel-rt-xenomai --mkinitrd --dracut \
+    --depmod --update %{version}-%{release}.xenomai.%{_target_cpu} \
+    $NEWKERNARGS || exit $?
+%else
+/sbin/new-kernel-pkg --package kernel-rt-xenomai --mkinitrd --depmod \
+    --update %{version}-%{release}.xenomai.%{_target_cpu} $NEWKERNARGS || exit $?
+%endif
+/sbin/new-kernel-pkg --package kernel-rt-xenomai --rpmposttrans \
+    %{version}-%{release}.xenomai.%{_target_cpu} || exit $?
+if [ -x /sbin/weak-modules ]; then
+    /sbin/weak-modules --add-kernel \
+        %{version}-%{release}.xenomai.%{_target_cpu} || exit $?
+fi
+if [ -x /sbin/ldconfig ]
+then
+    /sbin/ldconfig -X || exit $?
+fi
+
+%post xenomai
+if [ `uname -i` == "i386" ] && [ -f /etc/sysconfig/kernel ]; then
+    /bin/sed -r -i -e \
+	's/^DEFAULTKERNEL=kernel-rt$/DEFAULTKERNEL=kernel-rt-xenomai/' \
+	/etc/sysconfig/kernel || exit $?
+fi
+/sbin/new-kernel-pkg --package kernel-rt-xenomai --install \
+    %{version}-%{release}.xenomai.%{_target_cpu} || exit $?
+
+%preun xenomai
+/sbin/new-kernel-pkg --rminitrd --rmmoddep --remove \
+    %{version}-%{release}.xenomai.%{_target_cpu} || exit $?
+if [ -x /sbin/weak-modules ]; then
+    /sbin/weak-modules --remove-kernel \
+	%{version}-%{release}.xenomai.%{_target_cpu} || exit $?
+fi
+if [ -x /sbin/ldconfig ]
+then
+    /sbin/ldconfig -X || exit $?
+fi
+
+%post xenomai-devel
+if [ -f /etc/sysconfig/kernel ]; then
+    . /etc/sysconfig/kernel || exit $?
+fi
+if [ "$HARDLINK" != "no" -a -x /usr/sbin/hardlink ]; then
+    pushd /usr/src/kernels/%{version}-%{release}.xenomai.%{_target_cpu} \
+	> /dev/null
+    /usr/bin/find . -type f | while read f; do
+        hardlink -c /usr/src/kernels/*.fc*.*/$f $f
+    done
+    popd > /dev/null
+fi
+%endif
+
+%if %{with_xeno_nonpae}
+%post xenomai-nonpae
+if [ `uname -i` == "i386" ] && [ -f /etc/sysconfig/kernel ]; then
+    /bin/sed -r -i -e \
+	's/^DEFAULTKERNEL=kernel-rt$/DEFAULTKERNEL=kernel-rt-xenomai-nonpae/' \
+	/etc/sysconfig/kernel || exit $?
+fi
+/sbin/new-kernel-pkg --package kernel-rt-xenomai-nonpae --install \
+    %{version}-%{release}.xenomai.nonpae.%{_target_cpu} || exit $?
+
+%preun xenomai-nonpae
+/sbin/new-kernel-pkg --rminitrd --rmmoddep --remove \
+    %{version}-%{release}.xenomai.nonpae.%{_target_cpu} || exit $?
+if [ -x /sbin/weak-modules ]; then
+    /sbin/weak-modules --remove-kernel \
+	%{version}-%{release}.xenomai.nonpae.%{_target_cpu} || exit $?
+fi
+if [ -x /sbin/ldconfig ]
+then
+    /sbin/ldconfig -X || exit $?
+fi
+
+%post xenomai-nonpae-devel
+if [ -f /etc/sysconfig/kernel ]; then
+    . /etc/sysconfig/kernel || exit $?
+fi
+if [ "$HARDLINK" != "no" -a -x /usr/sbin/hardlink ]; then
+    pushd /usr/src/kernels/%{version}-%{release}.xenomai.nonpae.%{_target_cpu} \
 	> /dev/null
     /usr/bin/find . -type f | while read f; do
         hardlink -c /usr/src/kernels/*.fc*.*/$f $f
@@ -843,12 +1074,15 @@ fi
 
 %changelog
 * Sun Jan 13 2013 John Morris <john@zultron.com> - 3.5.7-1
-- Update to xenomai_patch_version 3.5.7-x86-0.120112git5250eb
-
-* Sat Jan 12 2013 John Morris <john@zultron.com> - 3.5.7-1
 - Update to 3.5.7 for testing against Xenomai ipipe-gch.git
   for-core-3.5.7 branch
-- patch from ipipe-gch.git:  git diff v3.5.7..for-core-3.5.7
+- Update to xenomai_patch_version 3.5.7-x86-0.120112git5250eb
+  - patch from ipipe-gch.git:  git diff v3.5.7..for-core-3.5.7
+- Rename package to kernel-rt
+- Build Xenomai as a flavour, kernel-rt-xenomai
+- Disable non-rt build by default
+- Allow multiple flavours to BuildKernel, e.g. "NONPAE xenomai"
+- Wrap specfile lines to fix 80-char terminals
 
 * Fri Jan 11 2013 John Morris <john@zultron.com> - 3.5.3-1.el6
 - Back down to 3.5.3 to match I-pipe patch
