@@ -603,7 +603,7 @@ find Documentation -type d | xargs %{__chmod} u+w
 
 %if %{with_perf}
 %global perf_make \
-  %{__make} -s %{?_smp_mflags} -C tools/perf V=1 HAVE_CPLUS_DEMANGLE=1 \
+  %{__make} -s %{?_smp_mflags} -C tools/perf V=1 HAVE_CPLUS_DEMANGLE=1 \\\
 	NO_DWARF=1 prefix=%{_prefix}
 
 %{perf_make} all
