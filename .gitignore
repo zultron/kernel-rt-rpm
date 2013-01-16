@@ -3,6 +3,6 @@
 
 # fedpkg build artifacts
 /.build-*.log
-/kernel-xenomai-*/
+/kernel-rt-*/
 /x86_64/
-/kernel-xenomai-*.src.rpm
+/kernel-rt-*.src.rpm
