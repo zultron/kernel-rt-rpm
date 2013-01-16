@@ -343,8 +343,10 @@ BuildKernel() {
     # Correctly set the EXTRAVERSION string in the main Makefile.
     %{__perl} -p -i -e "s/^EXTRAVERSION.*/EXTRAVERSION = -%{release}${Flavour}.%{_target_cpu}/" Makefile
 
-    %{__make} -s CONFIG_DEBUG_SECTION_MISMATCH=y ARCH=%{buildarch} V=1 %{?_smp_mflags} bzImage
-    %{__make} -s CONFIG_DEBUG_SECTION_MISMATCH=y ARCH=%{buildarch} V=1 %{?_smp_mflags} modules
+    %{__make} -s CONFIG_DEBUG_SECTION_MISMATCH=y ARCH=%{buildarch} V=1 \
+	%{?_smp_mflags} bzImage
+    %{__make} -s CONFIG_DEBUG_SECTION_MISMATCH=y ARCH=%{buildarch} V=1 \
+	%{?_smp_mflags} modules
 
     # Install the results into the RPM_BUILD_ROOT directory.
     %{__mkdir_p} $RPM_BUILD_ROOT/boot
@@ -352,9 +354,11 @@ BuildKernel() {
     %{__install} -m 644 System.map $RPM_BUILD_ROOT/boot/System.map-%{KVRFA}
 
 %if %{with_dracut}
-    # We estimate the size of the initramfs because rpm needs to take this size
-    # into consideration when performing disk space calculations. (See bz #530778)
-    dd if=/dev/zero of=$RPM_BUILD_ROOT/boot/initramfs-%{KVRFA}.img bs=1M count=20
+    # We estimate the size of the initramfs because rpm needs to take
+    # this size into consideration when performing disk space
+    # calculations.  (See bz #530778)
+    dd if=/dev/zero of=$RPM_BUILD_ROOT/boot/initramfs-%{KVRFA}.img bs=1M \
+	count=20
 %else
     dd if=/dev/zero of=$RPM_BUILD_ROOT/boot/initrd-%{KVRFA}.img bs=1M count=5
 %endif
@@ -365,10 +369,12 @@ BuildKernel() {
     %{__mkdir_p} $RPM_BUILD_ROOT/lib/modules/%{KVRFA}
     # Override $(mod-fw) because we don't want it to install any firmware
     # We'll do that ourselves with 'make firmware_install'
-    %{__make} -s ARCH=%{buildarch} INSTALL_MOD_PATH=$RPM_BUILD_ROOT modules_install KERNELRELEASE=%{KVRFA} mod-fw=
+    %{__make} -s ARCH=%{buildarch} INSTALL_MOD_PATH=$RPM_BUILD_ROOT \
+	modules_install KERNELRELEASE=%{KVRFA} mod-fw=
 
 %ifarch %{vdso_arches}
-    %{__make} -s ARCH=%{buildarch} INSTALL_MOD_PATH=$RPM_BUILD_ROOT vdso_install KERNELRELEASE=%{KVRFA}
+    %{__make} -s ARCH=%{buildarch} INSTALL_MOD_PATH=$RPM_BUILD_ROOT \
+	vdso_install KERNELRELEASE=%{KVRFA}
     if grep '^CONFIG_XEN=y$' .config > /dev/null; then
       echo > ldconfig-kernel-rt.conf "\
 # This directive teaches ldconfig to search in nosegneg subdirectories
@@ -405,7 +411,8 @@ hwcap 1 nosegneg"
     %{__mkdir_p} $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/weak-updates
 
     # First copy everything . . .
-    %{__cp} --parents `find  -type f -name "Makefile*" -o -name "Kconfig*"` $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build
+    %{__cp} --parents `find  -type f -name "Makefile*" -o -name "Kconfig*"` \
+	$RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build
     %{__cp} Module.symvers $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build
     %{__cp} System.map $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build
     if [ -s Module.markers ]; then
@@ -421,30 +428,44 @@ hwcap 1 nosegneg"
     %{__cp} .config $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build
     %{__cp} -a scripts $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build
     if [ -d arch/%{buildarch}/scripts ]; then
-      %{__cp} -a arch/%{buildarch}/scripts $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/arch/%{_arch} || :
+      %{__cp} -a arch/%{buildarch}/scripts \
+	$RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/arch/%{_arch} || :
     fi
     if [ -f arch/%{buildarch}/*lds ]; then
-      %{__cp} -a arch/%{buildarch}/*lds $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/arch/%{_arch}/ || :
+      %{__cp} -a arch/%{buildarch}/*lds \
+	$RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/arch/%{_arch}/ || :
     fi
     %{__rm} -f $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/scripts/*.o
     %{__rm} -f $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/scripts/*/*.o
     if [ -d arch/%{asmarch}/include ]; then
-      %{__cp} -a --parents arch/%{asmarch}/include $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/
+      %{__cp} -a --parents arch/%{asmarch}/include \
+	$RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/
     fi
     %{__mkdir_p} $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/include
     pushd include > /dev/null
-    %{__cp} -a acpi asm-generic config crypto drm generated keys linux math-emu media mtd net pcmcia rdma rxrpc scsi sound target trace video xen $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/include
+    %{__cp} -a acpi asm-generic config crypto drm generated keys linux \
+	math-emu media mtd net pcmcia rdma rxrpc scsi sound target trace \
+	video xen $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/include
     popd > /dev/null
-    # Make a hard-link from the include/linux/ directory to the include/generated/autoconf.h file.
-    /bin/ln $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/include/generated/autoconf.h $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/include/linux/
+    # Make a hard-link from the include/linux/ directory to the
+    # include/generated/autoconf.h file.
+    /bin/ln \
+      $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/include/generated/autoconf.h \
+      $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/include/linux/
     # Copy .config to include/config/auto.conf so a "make prepare" is unnecessary.
-    %{__cp} $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/.config $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/include/config/auto.conf
-    # Now ensure that the Makefile, .config, version.h, autoconf.h and auto.conf files
-    # all have matching timestamps so that external modules can be built.
-    touch -r $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/Makefile $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/.config
-    touch -r $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/Makefile $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/include/linux/version.h
-    touch -r $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/Makefile $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/include/linux/autoconf.h
-    touch -r $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/Makefile $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/include/config/auto.conf
+    %{__cp} $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/.config \
+	$RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/include/config/auto.conf
+    # Now ensure that the Makefile, .config, version.h, autoconf.h and
+    # auto.conf files all have matching timestamps so that external
+    # modules can be built.
+    touch -r $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/Makefile \
+	$RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/.config
+    touch -r $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/Makefile \
+	$RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/include/linux/version.h
+    touch -r $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/Makefile \
+	$RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/include/linux/autoconf.h
+    touch -r $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/Makefile \
+	$RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/include/config/auto.conf
 
     find $RPM_BUILD_ROOT/lib/modules/%{KVRFA} -name "*.ko" -type f > modnames
 
@@ -452,11 +473,13 @@ hwcap 1 nosegneg"
     xargs --no-run-if-empty %{__chmod} u+x < modnames
 
     # Generate a list of modules for block and networking.
-    fgrep /drivers/ modnames | xargs --no-run-if-empty nm -upA | sed -n 's,^.*/\([^/]*\.ko\):  *U \(.*\)$,\1 \2,p' > drivers.undef
+    fgrep /drivers/ modnames | xargs --no-run-if-empty nm -upA | \
+	sed -n 's,^.*/\([^/]*\.ko\):  *U \(.*\)$,\1 \2,p' > drivers.undef
 
     collect_modules_list()
     {
-      sed -r -n -e "s/^([^ ]+) \\.?($2)\$/\\1/p" drivers.undef | LC_ALL=C sort -u > $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/modules.$1
+      sed -r -n -e "s/^([^ ]+) \\.?($2)\$/\\1/p" drivers.undef | \
+	LC_ALL=C sort -u > $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/modules.$1
     }
 
     collect_modules_list networking \
@@ -480,20 +503,26 @@ hwcap 1 nosegneg"
         /sbin/modinfo -l $i >> modinfo
     done < modnames
 
-    egrep -v 'GPL( v2)?$|Dual BSD/GPL$|Dual MPL/GPL$|GPL and additional rights$' modinfo && exit 1
+    egrep -v \
+	'GPL( v2)?$|Dual BSD/GPL$|Dual MPL/GPL$|GPL and additional rights$' \
+	modinfo && exit 1
 
     %{__rm} -f modinfo modnames
 
-    # Remove all the files that will be auto generated by depmod at the kernel install time.
-    for i in alias alias.bin ccwmap dep dep.bin ieee1394map inputmap isapnpmap ofmap pcimap seriomap symbols symbols.bin usbmap
+    # Remove all the files that will be auto generated by depmod at
+    # the kernel install time.
+    for i in alias alias.bin ccwmap dep dep.bin ieee1394map inputmap \
+	isapnpmap ofmap pcimap seriomap symbols symbols.bin usbmap
     do
         %{__rm} -f $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/modules.$i
     done
 
     # Move the development files out of the /lib/modules/ file system.
     %{__mkdir_p} $RPM_BUILD_ROOT/usr/src/kernels
-    %{__mv} $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build $RPM_BUILD_ROOT/usr/src/kernels/%{KVRFA}
-    %{__ln_s} -f ../../../usr/src/kernels/%{KVRFA} $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build
+    %{__mv} $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build \
+	$RPM_BUILD_ROOT/usr/src/kernels/%{KVRFA}
+    %{__ln_s} -f ../../../usr/src/kernels/%{KVRFA} \
+	$RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build
 }
 
 %{__rm} -rf $RPM_BUILD_ROOT
@@ -519,7 +548,8 @@ find Documentation -type d | xargs %{__chmod} u+w
 
 %if %{with_perf}
 %global perf_make \
-  %{__make} -s %{?_smp_mflags} -C tools/perf V=1 HAVE_CPLUS_DEMANGLE=1 NO_DWARF=1 prefix=%{_prefix}
+  %{__make} -s %{?_smp_mflags} -C tools/perf V=1 HAVE_CPLUS_DEMANGLE=1 \
+	NO_DWARF=1 prefix=%{_prefix}
 
 %{perf_make} all
 %{perf_make} man || false
@@ -536,7 +566,8 @@ man9dir=$RPM_BUILD_ROOT%{_datadir}/man/man9
 
 # Copy the documentation over.
 %{__mkdir_p} $docdir
-%{__tar} -f - --exclude=man --exclude='.*' -c Documentation | %{__tar} xf - -C $docdir
+%{__tar} -f - --exclude=man --exclude='.*' -c Documentation | \
+	%{__tar} xf - -C $docdir
 
 # Install the man pages for the kernel API.
 %{__mkdir_p} $man9dir
@@ -546,10 +577,12 @@ find Documentation/DocBook/man -name '*.9.gz' -print0 \
 
 %if %{with_headers}
 # Install the kernel headers.
-%{__make} -s ARCH=%{buildarch} INSTALL_HDR_PATH=$RPM_BUILD_ROOT/usr headers_install
+%{__make} -s ARCH=%{buildarch} INSTALL_HDR_PATH=$RPM_BUILD_ROOT/usr \
+	headers_install
 
 # Do a headers_check but don't die if it fails.
-%{__make} -s ARCH=%{buildarch} INSTALL_HDR_PATH=$RPM_BUILD_ROOT/usr headers_check > hdrwarnings.txt || :
+%{__make} -s ARCH=%{buildarch} INSTALL_HDR_PATH=$RPM_BUILD_ROOT/usr \
+	headers_check > hdrwarnings.txt || :
 if grep -q exist hdrwarnings.txt; then
    sed s:^$RPM_BUILD_ROOT/usr/include/:: hdrwarnings.txt
    # Temporarily cause a build failure if there are header inconsistencies.
@@ -569,7 +602,8 @@ find $RPM_BUILD_ROOT/usr/include \
 %endif
 
 %if %{with_firmware}
-# It's important NOT to have a .config file present, as it will just confuse the system.
+# It's important NOT to have a .config file present, as it will just
+# confuse the system.
 %{__make} -s INSTALL_FW_PATH=$RPM_BUILD_ROOT/lib/firmware firmware_install
 %endif
 
@@ -590,9 +624,10 @@ popd > /dev/null
 %if %{with_std}
 %posttrans
 NEWKERNARGS=""
-(/sbin/grubby --info=`/sbin/grubby --default-kernel`) 2>/dev/null | grep -q crashkernel
+(/sbin/grubby --info=`/sbin/grubby --default-kernel`) 2>/dev/null | grep -q \
+    crashkernel
 if [ $? -ne 0 ]; then
-        NEWKERNARGS="--kernel-args=\"crashkernel=auto\""
+    NEWKERNARGS="--kernel-args=\"crashkernel=auto\""
 fi
 %if %{with_dracut}
 /sbin/new-kernel-pkg --package kernel-rt --mkinitrd --dracut --depmod \
@@ -604,7 +639,8 @@ fi
 /sbin/new-kernel-pkg --package kernel-rt --rpmposttrans \
     %{version}-%{release}.%{_target_cpu} || exit $?
 if [ -x /sbin/weak-modules ]; then
-    /sbin/weak-modules --add-kernel %{version}-%{release}.%{_target_cpu} || exit $?
+    /sbin/weak-modules --add-kernel %{version}-%{release}.%{_target_cpu} || \
+        exit $?
 fi
 if [ -x /sbin/ldconfig ]
 then
@@ -617,16 +653,19 @@ if [ `uname -i` == "i386" ] && [ -f /etc/sysconfig/kernel ]; then
         's/^DEFAULTKERNEL=kernel-rt-NONPAE$/DEFAULTKERNEL=kernel-rt/' \
 	/etc/sysconfig/kernel || exit $?
 fi
-if grep --silent '^hwcap 0 nosegneg$' /etc/ld.so.conf.d/kernel-*.conf 2> /dev/null; then
+if grep --silent '^hwcap 0 nosegneg$' /etc/ld.so.conf.d/kernel-*.conf \
+  2> /dev/null; then
     /bin/sed -i '/^hwcap 0 nosegneg$/ s/0/1/' /etc/ld.so.conf.d/kernel-*.conf
 fi
 /sbin/new-kernel-pkg --package kernel-rt --install \
     %{version}-%{release}.%{_target_cpu} || exit $?
 
 %preun
-/sbin/new-kernel-pkg --rminitrd --rmmoddep --remove %{version}-%{release}.%{_target_cpu} || exit $?
+/sbin/new-kernel-pkg --rminitrd --rmmoddep --remove \
+    %{version}-%{release}.%{_target_cpu} || exit $?
 if [ -x /sbin/weak-modules ]; then
-    /sbin/weak-modules --remove-kernel %{version}-%{release}.%{_target_cpu} || exit $?
+    /sbin/weak-modules --remove-kernel \
+        %{version}-%{release}.%{_target_cpu} || exit $?
 fi
 if [ -x /sbin/ldconfig ]
 then
@@ -649,7 +688,8 @@ fi
 %if %{with_nonpae}
 %posttrans NONPAE
 NEWKERNARGS=""
-(/sbin/grubby --info=`/sbin/grubby --default-kernel`) 2> /dev/null | grep -q crashkernel
+(/sbin/grubby --info=`/sbin/grubby --default-kernel`) 2> /dev/null | \
+    grep -q crashkernel
 if [ $? -ne 0 ]; then
     NEWKERNARGS="--kernel-args=\"crashkernel=auto\""
 fi
@@ -664,7 +704,8 @@ fi
 /sbin/new-kernel-pkg --package kernel-rt-NONPAE --rpmposttrans \
     %{version}-%{release}NONPAE.%{_target_cpu} || exit $?
 if [ -x /sbin/weak-modules ]; then
-    /sbin/weak-modules --add-kernel %{version}-%{release}NONPAE.%{_target_cpu} || exit $?
+    /sbin/weak-modules --add-kernel \
+        %{version}-%{release}NONPAE.%{_target_cpu} || exit $?
 fi
 if [ -x /sbin/ldconfig ]
 then
@@ -681,9 +722,11 @@ fi
     %{version}-%{release}NONPAE.%{_target_cpu} || exit $?
 
 %preun NONPAE
-/sbin/new-kernel-pkg --rminitrd --rmmoddep --remove %{version}-%{release}NONPAE.%{_target_cpu} || exit $?
+/sbin/new-kernel-pkg --rminitrd --rmmoddep --remove \
+    %{version}-%{release}NONPAE.%{_target_cpu} || exit $?
 if [ -x /sbin/weak-modules ]; then
-    /sbin/weak-modules --remove-kernel %{version}-%{release}NONPAE.%{_target_cpu} || exit $?
+    /sbin/weak-modules --remove-kernel \
+	%{version}-%{release}NONPAE.%{_target_cpu} || exit $?
 fi
 if [ -x /sbin/ldconfig ]
 then
@@ -695,7 +738,8 @@ if [ -f /etc/sysconfig/kernel ]; then
     . /etc/sysconfig/kernel || exit $?
 fi
 if [ "$HARDLINK" != "no" -a -x /usr/sbin/hardlink ]; then
-    pushd /usr/src/kernels/%{version}-%{release}NONPAE.%{_target_cpu} > /dev/null
+    pushd /usr/src/kernels/%{version}-%{release}NONPAE.%{_target_cpu} \
+	> /dev/null
     /usr/bin/find . -type f | while read f; do
         hardlink -c /usr/src/kernels/*.fc*.*/$f $f
     done
