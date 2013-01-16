@@ -234,10 +234,9 @@ CONFIG_IPIPE_LEGACY=y
 #
 # Don't enable this by default
 # http://www.xenomai.org/pipermail/xenomai/2013-January/027292.html
+# Hopefully upstream will make this a run-time option; until then,
+# use smictrl
 # CONFIG_XENO_HW_SMI_WORKAROUND is not set
-#
-#CONFIG_XENO_HW_SMI_WORKAROUND=y
-#CONFIG_XENO_HW_SMI_ALL=y
 #
 # Just like CONFIG_ACPI_PROCESSOR, this idle driver sends the CPU into
 # deep C states, also causing huge latencies because the APIC timer
