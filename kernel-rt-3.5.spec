@@ -12,6 +12,30 @@
 # Define the buildid, if required.
 #define buildid .
 
+# Add flavours here; nonpae will be added automatically
+%global flavours xenomai
+
+# Flavours should add a summary
+%global xenomai_flavour_summary patched with Xenomai
+%global nonpae_flavour_summary for non-PAE CPUs
+%global xenomai_nonpae_flavour_summary patched with Xenomai for non-PAE CPUs
+
+# Flavours may add text for the description
+%global xenomai_flavour_description \
+This kernel is patched for the Xenomai real-time system.
+%global nonpae_flavour_summary \
+This package provides a version of the Linux kernel suitable for\
+processors without the Physical Address Extension (PAE) capability.\
+It can only address up to 4GB of memory.
+%global xenomai_nonpae_flavour_description \
+This kernel is patched for the Xenomai real-time system.\
+\
+This version of the Linux kernel is suitable for processors without\
+the Physical Address Extension (PAE) capability.  It can only address\
+up to 4GB of memory.
+
+
+
 # The following build options are enabled by default.
 # Use either --without <option> on your rpmbuild command line
 # or force the values to 0, here, to disable them.
@@ -22,8 +46,6 @@
 %define with_nonpae       %{?_without_nonpae:       0} %{?!_without_nonpae:       0}
 # Xenomai kernel-rt
 %define with_xeno         %{?_without_xeno:         0} %{?!_without_xeno:         1}
-# NONPAE Xeno kernel-rt
-%define with_xeno_nonpae  %{?_without_xeno_nonpae:  0} %{?!_without_xeno_nonpae:  1}
 # kernel-rt-doc
 %define with_doc          %{?_without_doc:          0} %{?!_without_doc:          1}
 # kernel-rt-headers
@@ -192,8 +214,6 @@ This package provides the Linux kernel (vmlinuz), the core of any
 Linux-based operating system. The kernel handles the basic functions
 of the OS: memory allocation, process allocation, device I/O, etc.
 
-This kernel is patched with the Xenomai real time system.
-
 %package devel
 Summary: Development package for building kernel modules to match the kernel.
 Group: System Environment/Kernel
@@ -209,165 +229,71 @@ AutoReqProv: no
 This package provides the kernel header files and makefiles
 sufficient to build modules against the kernel package.
 
+%define flavour_package() \
+%package %{1}\
+Summary: The Linux kernel %{expand:%%{%{1}_flavour_summary}}\
+Group: System Environment/Kernel\
+Provides: kernel = %{version}-%{release}\
+Provides: kernel-%{_target_cpu} = %{version}-%{release}.%{1}\
+Provides: kernel-%{1} = %{version}-%{release}\
+Provides: kernel-%{1}-%{_target_cpu} = %{version}-%{release}.%{1}\
+Provides: kernel-drm = 4.3.0\
+Provides: kernel-drm-nouveau = 16\
+Provides: kernel-modeset = 1\
+Provides: kernel-uname-r = %{version}-%{release}.%{_target_cpu}\
+Provides: kernel-rt = %{version}-%{release}\
+Provides: kernel-rt-%{_target_cpu} = %{version}-%{release}.%{1}\
+Provides: kernel-rt-%{1} = %{version}-%{release}\
+Provides: kernel-rt-%{1}-%{_target_cpu} = %{version}-%{release}.%{1}\
+Provides: kernel-rt-drm = 4.3.0\
+Provides: kernel-rt-drm-nouveau = 16\
+Provides: kernel-rt-modeset = 1\
+Provides: kernel-rt-uname-r = %{version}-%{release}.%{_target_cpu}\
+Requires(pre): %{kernel_prereq}\
+Requires(pre): %{initrd_prereq}\
+Requires(post): /sbin/new-kernel-pkg\
+Requires(preun): /sbin/new-kernel-pkg\
+Conflicts: %{kernel_dot_org_conflicts}\
+Conflicts: %{package_conflicts}\
+Conflicts: %{kernel_headers_conflicts}\
+# We can't let RPM do the dependencies automatically because it'll then pick up\
+# a correct but undesirable perl dependency from the module headers which\
+# isn't required for the kernel-rt proper to function.\
+AutoReq: no\
+AutoProv: yes\
+%description %{1}\
+This package provides the Linux kernel (vmlinuz), the core of any\
+Linux-based operating system. The kernel handles the basic functions\
+of the OS: memory allocation, process allocation, device I/O, etc.\
+\
+%{expand:%%{?%{1}_flavour_description:%%%{1}_flavour_description}}\
+\
+%package %{1}-devel\
+Summary: Development package for building kernel modules to match the %{?1:%{1} }kernel\
+Group: System Environment/Kernel\
+Provides: kernel-%{1}-devel-%{_target_cpu} = %{version}-%{release}\
+Provides: kernel-%{1}-devel = %{version}-%{release}.%{1}\
+Provides: kernel-%{1}-devel-uname-r = %{version}-%{release}.%{_target_cpu}\
+Provides: kernel-rt-%{1}-devel-%{_target_cpu} = %{version}-%{release}\
+Provides: kernel-rt-%{1}-devel = %{version}-%{release}.%{1}\
+Provides: kernel-rt-%{1}-devel-uname-r = %{version}-%{release}.%{_target_cpu}\
+Requires(pre): /usr/bin/find\
+AutoReqProv: no\
+%description %{1}-devel\
+This package provides the kernel header files and makefiles\
+sufficient to build modules against the %{?1:%{1} }kernel package.
+
+
 %if %{with_nonpae}
-%package NONPAE
-Summary: The Linux kernel for non-PAE capable processors.
-Group: System Environment/Kernel
-Provides: kernel = %{version}-%{release}
-Provides: kernel-%{_target_cpu} = %{version}-%{release}.NONPAE
-Provides: kernel-NONPAE = %{version}-%{release}
-Provides: kernel-NONPAE-%{_target_cpu} = %{version}-%{release}.NONPAE
-Provides: kernel-drm = 4.3.0
-Provides: kernel-drm-nouveau = 16
-Provides: kernel-modeset = 1
-Provides: kernel-uname-r = %{version}-%{release}.%{_target_cpu}
-Provides: kernel-rt = %{version}-%{release}
-Provides: kernel-rt-%{_target_cpu} = %{version}-%{release}.NONPAE
-Provides: kernel-rt-NONPAE = %{version}-%{release}
-Provides: kernel-rt-NONPAE-%{_target_cpu} = %{version}-%{release}.NONPAE
-Provides: kernel-rt-drm = 4.3.0
-Provides: kernel-rt-drm-nouveau = 16
-Provides: kernel-rt-modeset = 1
-Provides: kernel-rt-uname-r = %{version}-%{release}.%{_target_cpu}
-Requires(pre): %{kernel_prereq}
-Requires(pre): %{initrd_prereq}
-Requires(post): /sbin/new-kernel-pkg
-Requires(preun): /sbin/new-kernel-pkg
-Conflicts: %{kernel_dot_org_conflicts}
-Conflicts: %{package_conflicts}
-Conflicts: %{kernel_headers_conflicts}
-# We can't let RPM do the dependencies automatically because it'll then pick up
-# a correct but undesirable perl dependency from the module headers which
-# isn't required for the kernel-rt proper to function.
-AutoReq: no
-AutoProv: yes
-%description NONPAE
-This package provides a version of the Linux kernel suitable for
-processors without the Physical Address Extension (PAE) capability.
-It can only address up to 4GB of memory.
-
-%package NONPAE-devel
-Summary: Development package for building kernel modules to match the non-PAE kernel.
-Group: System Environment/Kernel
-Provides: kernel-NONPAE-devel-%{_target_cpu} = %{version}-%{release}
-Provides: kernel-NONPAE-devel = %{version}-%{release}.NONPAE
-Provides: kernel-NONPAE-devel-uname-r = %{version}-%{release}.%{_target_cpu}
-Provides: kernel-rt-NONPAE-devel-%{_target_cpu} = %{version}-%{release}
-Provides: kernel-rt-NONPAE-devel = %{version}-%{release}.NONPAE
-Provides: kernel-rt-NONPAE-devel-uname-r = %{version}-%{release}.%{_target_cpu}
-Requires(pre): /usr/bin/find
-AutoReqProv: no
-%description NONPAE-devel
-This package provides the kernel header files and makefiles
-sufficient to build modules against the kernel package.
+%flavour_package NONPAE
 %endif
 
-%if %{with_xeno}
-%package xenomai
-Summary: The Linux kernel patched for the Xenomai real time system
-Group: System Environment/Kernel
-Provides: kernel = %{version}-%{release}
-Provides: kernel-%{_target_cpu} = %{version}-%{release}.xenomai
-Provides: kernel-xenomai = %{version}-%{release}
-Provides: kernel-xenomai-%{_target_cpu} = %{version}-%{release}.xenomai
-Provides: kernel-drm = 4.3.0
-Provides: kernel-drm-nouveau = 16
-Provides: kernel-modeset = 1
-Provides: kernel-uname-r = %{version}-%{release}.%{_target_cpu}
-Provides: kernel-rt = %{version}-%{release}
-Provides: kernel-rt-%{_target_cpu} = %{version}-%{release}.xenomai
-Provides: kernel-rt-xenomai = %{version}-%{release}
-Provides: kernel-rt-xenomai-%{_target_cpu} = %{version}-%{release}.xenomai
-Provides: kernel-rt-drm = 4.3.0
-Provides: kernel-rt-drm-nouveau = 16
-Provides: kernel-rt-modeset = 1
-Provides: kernel-rt-uname-r = %{version}-%{release}.%{_target_cpu}
-Requires(pre): %{kernel_prereq}
-Requires(pre): %{initrd_prereq}
-Requires(post): /sbin/new-kernel-pkg
-Requires(preun): /sbin/new-kernel-pkg
-Conflicts: %{kernel_dot_org_conflicts}
-Conflicts: %{package_conflicts}
-Conflicts: %{kernel_headers_conflicts}
-# We can't let RPM do the dependencies automatically because it'll then pick up
-# a correct but undesirable perl dependency from the module headers which
-# isn't required for the kernel-rt proper to function.
-AutoReq: no
-AutoProv: yes
-%description xenomai
-This package provides a version of the Linux kernel suitable for
-processors without the Physical Address Extension (PAE) capability.
-It can only address up to 4GB of memory.
-
-%package xenomai-devel
-Summary: Development package for building kernel modules to match the non-PAE kernel.
-Group: System Environment/Kernel
-Provides: kernel-xenomai-devel-%{_target_cpu} = %{version}-%{release}
-Provides: kernel-xenomai-devel = %{version}-%{release}.xenomai
-Provides: kernel-xenomai-devel-uname-r = %{version}-%{release}.%{_target_cpu}
-Provides: kernel-rt-xenomai-devel-%{_target_cpu} = %{version}-%{release}
-Provides: kernel-rt-xenomai-devel = %{version}-%{release}.xenomai
-Provides: kernel-rt-xenomai-devel-uname-r = %{version}-%{release}.%{_target_cpu}
-Requires(pre): /usr/bin/find
-AutoReqProv: no
-%description xenomai-devel
-This package provides the kernel header files and makefiles
-sufficient to build modules against the kernel package.
+# build xenomai; this should be in a macro
+%flavour_package xenomai
+%if %{with_nonpae}
+%flavour_package xenomai_nonpae
 %endif
 
-%if %{with_xeno_nonpae}
-%package xenomai-nonpae
-Summary: The Linux kernel patched for the Xenomai real time system
-Group: System Environment/Kernel
-Provides: kernel = %{version}-%{release}
-Provides: kernel-%{_target_cpu} = %{version}-%{release}.xenomai.nonpae
-Provides: kernel-xenomai-nonpae = %{version}-%{release}
-Provides: kernel-xenomai-nonpae-%{_target_cpu} = %{version}-%{release}.xenomai.nonpae
-Provides: kernel-drm = 4.3.0
-Provides: kernel-drm-nouveau = 16
-Provides: kernel-modeset = 1
-Provides: kernel-uname-r = %{version}-%{release}.%{_target_cpu}
-Provides: kernel-rt = %{version}-%{release}
-Provides: kernel-rt-%{_target_cpu} = %{version}-%{release}.xenomai.nonpae
-Provides: kernel-rt-xenomai-nonpae = %{version}-%{release}
-Provides: kernel-rt-xenomai-nonpae-%{_target_cpu} = %{version}-%{release}.xenomai.nonpae
-Provides: kernel-rt-drm = 4.3.0
-Provides: kernel-rt-drm-nouveau = 16
-Provides: kernel-rt-modeset = 1
-Provides: kernel-rt-uname-r = %{version}-%{release}.%{_target_cpu}
-Requires(pre): %{kernel_prereq}
-Requires(pre): %{initrd_prereq}
-Requires(post): /sbin/new-kernel-pkg
-Requires(preun): /sbin/new-kernel-pkg
-Conflicts: %{kernel_dot_org_conflicts}
-Conflicts: %{package_conflicts}
-Conflicts: %{kernel_headers_conflicts}
-# We can't let RPM do the dependencies automatically because it'll then pick up
-# a correct but undesirable perl dependency from the module headers which
-# isn't required for the kernel-rt proper to function.
-AutoReq: no
-AutoProv: yes
-%description xenomai-nonpae
-This package provides a version of the Linux kernel suitable for
-processors without the Physical Address Extension (PAE) capability.
-It can only address up to 4GB of memory.
-
-%package xenomai-nonpae-devel
-Summary: Development package for building kernel modules to match the non-PAE kernel.
-Group: System Environment/Kernel
-Provides: kernel-xenomai-nonpae-devel-%{_target_cpu} = %{version}-%{release}
-Provides: kernel-xenomai-nonpae-devel = %{version}-%{release}.xenomai.nonpae
-Provides: kernel-xenomai-nonpae-devel-uname-r = %{version}-%{release}.%{_target_cpu}
-Provides: kernel-rt-xenomai-nonpae-devel-%{_target_cpu} = %{version}-%{release}
-Provides: kernel-rt-xenomai-nonpae-devel = %{version}-%{release}.xenomai.nonpae
-Provides: kernel-rt-xenomai-nonpae-devel-uname-r = %{version}-%{release}.%{_target_cpu}
-Requires(pre): /usr/bin/find
-AutoReqProv: no
-
-%description xenomai-nonpae-devel
-This package provides the kernel header files and makefiles
-sufficient to build modules against the kernel package.
-%endif
 
 %if %{with_doc}
 %package doc
@@ -664,10 +590,6 @@ BuildKernel NONPAE
 
 %if %{with_xeno}
 BuildKernel xenomai
-%endif
-
-%if %{with_xeno_nonpae}
-BuildKernel NONPAE xenomai
 %endif
 
 %if %{with_doc}
