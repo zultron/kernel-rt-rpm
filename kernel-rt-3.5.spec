@@ -676,291 +676,131 @@ popd > /dev/null
 %{__rm} -rf $RPM_BUILD_ROOT
 
 # Scripts section.
+%define flavour_scripts() \
+%posttrans %{?1}\
+NEWKERNARGS=""\
+(/sbin/grubby --info=`/sbin/grubby --default-kernel`) 2>/dev/null | grep -q \\\
+    crashkernel\
+if [ $? -ne 0 ]; then\
+    NEWKERNARGS="--kernel-args=\"crashkernel=auto\""\
+fi\
+%if %{with_dracut}\
+/sbin/new-kernel-pkg --package kernel-rt%{?1:-%{1}} --mkinitrd --dracut \\\
+    --depmod --update %{version}-%{release}%{?1:.%{1}}.%{_target_cpu} \\\
+    $NEWKERNARGS || exit $?\
+%else\
+/sbin/new-kernel-pkg --package kernel-rt%{?1:-%{1}} --mkinitrd \\\
+    --depmod --update %{version}-%{release}%{?1:.%{1}}.%{_target_cpu} \\\
+    $NEWKERNARGS || exit $?\
+%endif\
+/sbin/new-kernel-pkg --package kernel-rt%{?1:-%{1}} --rpmposttrans \\\
+    %{version}-%{release}%{?1:.%{1}}.%{_target_cpu} || exit $?\
+if [ -x /sbin/weak-modules ]; then\
+    /sbin/weak-modules --add-kernel \\\
+	%{version}-%{release}%{?1:.%{1}}.%{_target_cpu} || exit $?\
+fi\
+if [ -x /sbin/ldconfig ]\
+then\
+    /sbin/ldconfig -X || exit $?\
+fi\
+\
+%post %{?1}\
+if [ `uname -i` == "i386" ] && [ -f /etc/sysconfig/kernel ]; then\
+    /bin/sed -r -i -e \\\
+        's/^DEFAULTKERNEL=kernel-rt.*/DEFAULTKERNEL=kernel-rt%{?1:-%{1}}/' \\\
+	/etc/sysconfig/kernel || exit $?\
+fi\
+if test "%{1/nonpae/}" = "%{1}"; then  # not PAE\
+  if grep --silent '^hwcap 0 nosegneg$' /etc/ld.so.conf.d/kernel-*.conf \\\
+    2> /dev/null; then\
+      /bin/sed -i '/^hwcap 0 nosegneg$/ s/0/1/' /etc/ld.so.conf.d/kernel-*.conf\
+  fi\
+fi\
+/sbin/new-kernel-pkg --package kernel-rt%{?1:-%{1}} --install \\\
+    %{version}-%{release}%{?1:.%{1}}.%{_target_cpu} || exit $?\
+\
+%preun %{?1}\
+/sbin/new-kernel-pkg --rminitrd --rmmoddep --remove \\\
+    %{version}-%{release}%{?1:.%{1}}.%{_target_cpu} || exit $?\
+if [ -x /sbin/weak-modules ]; then\
+    /sbin/weak-modules --remove-kernel \\\
+        %{version}-%{release}%{?1:.%{1}}.%{_target_cpu} || exit $?\
+fi\
+if [ -x /sbin/ldconfig ]\
+then\
+    /sbin/ldconfig -X || exit $?\
+fi\
+\
+%post %{?1:%{1}-}devel\
+if [ -f /etc/sysconfig/kernel ]; then\
+    . /etc/sysconfig/kernel || exit $?\
+fi\
+if [ "$HARDLINK" != "no" -a -x /usr/sbin/hardlink ]; then\
+    pushd /usr/src/kernels/%{version}-%{release}%{?1:.%{1}}.%{_target_cpu} \\\
+	> /dev/null\
+    /usr/bin/find . -type f | while read f; do\
+        hardlink -c /usr/src/kernels/*.fc*.*/$f $f\
+    done\
+    popd > /dev/null\
+fi
+
 %if %{with_std}
-%posttrans
-NEWKERNARGS=""
-(/sbin/grubby --info=`/sbin/grubby --default-kernel`) 2>/dev/null | grep -q \
-    crashkernel
-if [ $? -ne 0 ]; then
-    NEWKERNARGS="--kernel-args=\"crashkernel=auto\""
-fi
-%if %{with_dracut}
-/sbin/new-kernel-pkg --package kernel-rt --mkinitrd --dracut --depmod \
-    --update %{version}-%{release}.%{_target_cpu} $NEWKERNARGS || exit $?
-%else
-/sbin/new-kernel-pkg --package kernel-rt --mkinitrd --depmod --update \
-    %{version}-%{release}.%{_target_cpu} $NEWKERNARGS || exit $?
-%endif
-/sbin/new-kernel-pkg --package kernel-rt --rpmposttrans \
-    %{version}-%{release}.%{_target_cpu} || exit $?
-if [ -x /sbin/weak-modules ]; then
-    /sbin/weak-modules --add-kernel %{version}-%{release}.%{_target_cpu} || \
-        exit $?
-fi
-if [ -x /sbin/ldconfig ]
-then
-    /sbin/ldconfig -X || exit $?
-fi
-
-%post
-if [ `uname -i` == "i386" ] && [ -f /etc/sysconfig/kernel ]; then
-    /bin/sed -r -i -e \
-        's/^DEFAULTKERNEL=kernel-rt-.*/DEFAULTKERNEL=kernel-rt/' \
-	/etc/sysconfig/kernel || exit $?
-fi
-if grep --silent '^hwcap 0 nosegneg$' /etc/ld.so.conf.d/kernel-*.conf \
-  2> /dev/null; then
-    /bin/sed -i '/^hwcap 0 nosegneg$/ s/0/1/' /etc/ld.so.conf.d/kernel-*.conf
-fi
-/sbin/new-kernel-pkg --package kernel-rt --install \
-    %{version}-%{release}.%{_target_cpu} || exit $?
-
-%preun
-/sbin/new-kernel-pkg --rminitrd --rmmoddep --remove \
-    %{version}-%{release}.%{_target_cpu} || exit $?
-if [ -x /sbin/weak-modules ]; then
-    /sbin/weak-modules --remove-kernel \
-        %{version}-%{release}.%{_target_cpu} || exit $?
-fi
-if [ -x /sbin/ldconfig ]
-then
-    /sbin/ldconfig -X || exit $?
-fi
-
-%post devel
-if [ -f /etc/sysconfig/kernel ]; then
-    . /etc/sysconfig/kernel || exit $?
-fi
-if [ "$HARDLINK" != "no" -a -x /usr/sbin/hardlink ]; then
-    pushd /usr/src/kernels/%{version}-%{release}.%{_target_cpu} > /dev/null
-    /usr/bin/find . -type f | while read f; do
-        hardlink -c /usr/src/kernels/*.fc*.*/$f $f
-    done
-    popd > /dev/null
-fi
-%endif
-
+%flavour_scripts
 %if %{with_nonpae}
-%posttrans NONPAE
-NEWKERNARGS=""
-(/sbin/grubby --info=`/sbin/grubby --default-kernel`) 2> /dev/null | \
-    grep -q crashkernel
-if [ $? -ne 0 ]; then
-    NEWKERNARGS="--kernel-args=\"crashkernel=auto\""
-fi
-%if %{with_dracut}
-/sbin/new-kernel-pkg --package kernel-rt-NONPAE --mkinitrd --dracut \
-    --depmod --update %{version}-%{release}NONPAE.%{_target_cpu} \
-    $NEWKERNARGS || exit $?
-%else
-/sbin/new-kernel-pkg --package kernel-rt-NONPAE --mkinitrd --depmod \
-    --update %{version}-%{release}NONPAE.%{_target_cpu} $NEWKERNARGS || exit $?
+%flavour_scripts nonpae
 %endif
-/sbin/new-kernel-pkg --package kernel-rt-NONPAE --rpmposttrans \
-    %{version}-%{release}NONPAE.%{_target_cpu} || exit $?
-if [ -x /sbin/weak-modules ]; then
-    /sbin/weak-modules --add-kernel \
-        %{version}-%{release}NONPAE.%{_target_cpu} || exit $?
-fi
-if [ -x /sbin/ldconfig ]
-then
-    /sbin/ldconfig -X || exit $?
-fi
-
-%post NONPAE
-if [ `uname -i` == "i386" ] && [ -f /etc/sysconfig/kernel ]; then
-    /bin/sed -r -i -e \
-	's/^DEFAULTKERNEL=kernel-rt$/DEFAULTKERNEL=kernel-rt-NONPAE/' \
-	/etc/sysconfig/kernel || exit $?
-fi
-/sbin/new-kernel-pkg --package kernel-rt-NONPAE --install \
-    %{version}-%{release}NONPAE.%{_target_cpu} || exit $?
-
-%preun NONPAE
-/sbin/new-kernel-pkg --rminitrd --rmmoddep --remove \
-    %{version}-%{release}NONPAE.%{_target_cpu} || exit $?
-if [ -x /sbin/weak-modules ]; then
-    /sbin/weak-modules --remove-kernel \
-	%{version}-%{release}NONPAE.%{_target_cpu} || exit $?
-fi
-if [ -x /sbin/ldconfig ]
-then
-    /sbin/ldconfig -X || exit $?
-fi
-
-%post NONPAE-devel
-if [ -f /etc/sysconfig/kernel ]; then
-    . /etc/sysconfig/kernel || exit $?
-fi
-if [ "$HARDLINK" != "no" -a -x /usr/sbin/hardlink ]; then
-    pushd /usr/src/kernels/%{version}-%{release}NONPAE.%{_target_cpu} \
-	> /dev/null
-    /usr/bin/find . -type f | while read f; do
-        hardlink -c /usr/src/kernels/*.fc*.*/$f $f
-    done
-    popd > /dev/null
-fi
 %endif
 
+# xenomai scripts; this should be in a macro
 %if %{with_xeno}
-%posttrans xenomai
-NEWKERNARGS=""
-(/sbin/grubby --info=`/sbin/grubby --default-kernel`) 2> /dev/null | \
-    grep -q crashkernel
-if [ $? -ne 0 ]; then
-    NEWKERNARGS="--kernel-args=\"crashkernel=auto\""
-fi
-%if %{with_dracut}
-/sbin/new-kernel-pkg --package kernel-rt-xenomai --mkinitrd --dracut \
-    --depmod --update %{version}-%{release}.xenomai.%{_target_cpu} \
-    $NEWKERNARGS || exit $?
-%else
-/sbin/new-kernel-pkg --package kernel-rt-xenomai --mkinitrd --depmod \
-    --update %{version}-%{release}.xenomai.%{_target_cpu} $NEWKERNARGS || exit $?
+%flavour_scripts xenomai
+%if %{with_nonpae}
+%flavour_scripts xenomai_nonpae
 %endif
-/sbin/new-kernel-pkg --package kernel-rt-xenomai --rpmposttrans \
-    %{version}-%{release}.xenomai.%{_target_cpu} || exit $?
-if [ -x /sbin/weak-modules ]; then
-    /sbin/weak-modules --add-kernel \
-        %{version}-%{release}.xenomai.%{_target_cpu} || exit $?
-fi
-if [ -x /sbin/ldconfig ]
-then
-    /sbin/ldconfig -X || exit $?
-fi
-
-%post xenomai
-if [ `uname -i` == "i386" ] && [ -f /etc/sysconfig/kernel ]; then
-    /bin/sed -r -i -e \
-	's/^DEFAULTKERNEL=kernel-rt$/DEFAULTKERNEL=kernel-rt-xenomai/' \
-	/etc/sysconfig/kernel || exit $?
-fi
-/sbin/new-kernel-pkg --package kernel-rt-xenomai --install \
-    %{version}-%{release}.xenomai.%{_target_cpu} || exit $?
-
-%preun xenomai
-/sbin/new-kernel-pkg --rminitrd --rmmoddep --remove \
-    %{version}-%{release}.xenomai.%{_target_cpu} || exit $?
-if [ -x /sbin/weak-modules ]; then
-    /sbin/weak-modules --remove-kernel \
-	%{version}-%{release}.xenomai.%{_target_cpu} || exit $?
-fi
-if [ -x /sbin/ldconfig ]
-then
-    /sbin/ldconfig -X || exit $?
-fi
-
-%post xenomai-devel
-if [ -f /etc/sysconfig/kernel ]; then
-    . /etc/sysconfig/kernel || exit $?
-fi
-if [ "$HARDLINK" != "no" -a -x /usr/sbin/hardlink ]; then
-    pushd /usr/src/kernels/%{version}-%{release}.xenomai.%{_target_cpu} \
-	> /dev/null
-    /usr/bin/find . -type f | while read f; do
-        hardlink -c /usr/src/kernels/*.fc*.*/$f $f
-    done
-    popd > /dev/null
-fi
-%endif
-
-%if %{with_xeno_nonpae}
-%post xenomai-nonpae
-if [ `uname -i` == "i386" ] && [ -f /etc/sysconfig/kernel ]; then
-    /bin/sed -r -i -e \
-	's/^DEFAULTKERNEL=kernel-rt$/DEFAULTKERNEL=kernel-rt-xenomai-nonpae/' \
-	/etc/sysconfig/kernel || exit $?
-fi
-/sbin/new-kernel-pkg --package kernel-rt-xenomai-nonpae --install \
-    %{version}-%{release}.xenomai.nonpae.%{_target_cpu} || exit $?
-
-%preun xenomai-nonpae
-/sbin/new-kernel-pkg --rminitrd --rmmoddep --remove \
-    %{version}-%{release}.xenomai.nonpae.%{_target_cpu} || exit $?
-if [ -x /sbin/weak-modules ]; then
-    /sbin/weak-modules --remove-kernel \
-	%{version}-%{release}.xenomai.nonpae.%{_target_cpu} || exit $?
-fi
-if [ -x /sbin/ldconfig ]
-then
-    /sbin/ldconfig -X || exit $?
-fi
-
-%post xenomai-nonpae-devel
-if [ -f /etc/sysconfig/kernel ]; then
-    . /etc/sysconfig/kernel || exit $?
-fi
-if [ "$HARDLINK" != "no" -a -x /usr/sbin/hardlink ]; then
-    pushd /usr/src/kernels/%{version}-%{release}.xenomai.nonpae.%{_target_cpu} \
-	> /dev/null
-    /usr/bin/find . -type f | while read f; do
-        hardlink -c /usr/src/kernels/*.fc*.*/$f $f
-    done
-    popd > /dev/null
-fi
 %endif
 
 # Files section.
+%define flavour_files() \
+%files %{?1}\
+%defattr(-,root,root)\
+/boot/vmlinuz-%{version}-%{release}%{?1:.%{1}}.%{_target_cpu}\
+/boot/System.map-%{version}-%{release}%{?1:.%{1}}.%{_target_cpu}\
+/boot/symvers-%{version}-%{release}%{?1:.%{1}}.%{_target_cpu}.gz\
+/boot/config-%{version}-%{release}%{?1:.%{1}}.%{_target_cpu}\
+%dir /lib/modules/%{version}-%{release}%{?1:.%{1}}.%{_target_cpu}\
+/lib/modules/%{version}-%{release}%{?1:.%{1}}.%{_target_cpu}/kernel\
+/lib/modules/%{version}-%{release}%{?1:.%{1}}.%{_target_cpu}/extra\
+/lib/modules/%{version}-%{release}%{?1:.%{1}}.%{_target_cpu}/build\
+/lib/modules/%{version}-%{release}%{?1:.%{1}}.%{_target_cpu}/source\
+/lib/modules/%{version}-%{release}%{?1:.%{1}}.%{_target_cpu}/updates\
+/lib/modules/%{version}-%{release}%{?1:.%{1}}.%{_target_cpu}/weak-updates\
+%ifarch %{vdso_arches}\
+/lib/modules/%{version}-%{release}%{?1:.%{1}}.%{_target_cpu}/vdso\
+/etc/ld.so.conf.d/kernel-rt-%{version}-%{release}%{?1:.%{1}}.%{_target_cpu}.conf\
+%endif\
+/lib/modules/%{version}-%{release}%{?1:.%{1}}.%{_target_cpu}/modules.*\
+%if %{with_dracut}\
+%ghost /boot/initramfs-%{version}-%{release}%{?1:.%{1}}.%{_target_cpu}.img\
+%else\
+%ghost /boot/initrd-%{version}-%{release}%{?1:.%{1}}.%{_target_cpu}.img\
+%endif\
+\
+%files %{?1:%{1}-}devel\
+%defattr(-,root,root)\
+%dir /usr/src/kernels\
+/usr/src/kernels/%{version}-%{release}%{?1:.%{1}}.%{_target_cpu}
+
 %if %{with_std}
-%files
-%defattr(-,root,root)
-/boot/vmlinuz-%{version}-%{release}.%{_target_cpu}
-/boot/System.map-%{version}-%{release}.%{_target_cpu}
-/boot/symvers-%{version}-%{release}.%{_target_cpu}.gz
-/boot/config-%{version}-%{release}.%{_target_cpu}
-%dir /lib/modules/%{version}-%{release}.%{_target_cpu}
-/lib/modules/%{version}-%{release}.%{_target_cpu}/kernel
-/lib/modules/%{version}-%{release}.%{_target_cpu}/extra
-/lib/modules/%{version}-%{release}.%{_target_cpu}/build
-/lib/modules/%{version}-%{release}.%{_target_cpu}/source
-/lib/modules/%{version}-%{release}.%{_target_cpu}/updates
-/lib/modules/%{version}-%{release}.%{_target_cpu}/weak-updates
-%ifarch %{vdso_arches}
-/lib/modules/%{version}-%{release}.%{_target_cpu}/vdso
-/etc/ld.so.conf.d/kernel-rt-%{version}-%{release}.%{_target_cpu}.conf
-%endif
-/lib/modules/%{version}-%{release}.%{_target_cpu}/modules.*
-%if %{with_dracut}
-%ghost /boot/initramfs-%{version}-%{release}.%{_target_cpu}.img
-%else
-%ghost /boot/initrd-%{version}-%{release}.%{_target_cpu}.img
-%endif
-
-%files devel
-%defattr(-,root,root)
-%dir /usr/src/kernels
-/usr/src/kernels/%{version}-%{release}.%{_target_cpu}
-%endif
-
+%flavour_files
 %if %{with_nonpae}
-%files NONPAE
-%defattr(-,root,root)
-/boot/vmlinuz-%{version}-%{release}NONPAE.%{_target_cpu}
-/boot/System.map-%{version}-%{release}NONPAE.%{_target_cpu}
-/boot/symvers-%{version}-%{release}NONPAE.%{_target_cpu}.gz
-/boot/config-%{version}-%{release}NONPAE.%{_target_cpu}
-%dir /lib/modules/%{version}-%{release}NONPAE.%{_target_cpu}
-/lib/modules/%{version}-%{release}NONPAE.%{_target_cpu}/kernel
-/lib/modules/%{version}-%{release}NONPAE.%{_target_cpu}/extra
-/lib/modules/%{version}-%{release}NONPAE.%{_target_cpu}/build
-/lib/modules/%{version}-%{release}NONPAE.%{_target_cpu}/source
-/lib/modules/%{version}-%{release}NONPAE.%{_target_cpu}/updates
-/lib/modules/%{version}-%{release}NONPAE.%{_target_cpu}/weak-updates
-%ifarch %{vdso_arches}
-/lib/modules/%{version}-%{release}NONPAE.%{_target_cpu}/vdso
-/etc/ld.so.conf.d/kernel-rt-%{version}-%{release}NONPAE.%{_target_cpu}.conf
+%flavour_files nonpae
 %endif
-/lib/modules/%{version}-%{release}NONPAE.%{_target_cpu}/modules.*
-%if %{with_dracut}
-%ghost /boot/initramfs-%{version}-%{release}NONPAE.%{_target_cpu}.img
-%else
-%ghost /boot/initrd-%{version}-%{release}NONPAE.%{_target_cpu}.img
 %endif
 
-%files NONPAE-devel
-%defattr(-,root,root)
-%dir /usr/src/kernels
-/usr/src/kernels/%{version}-%{release}NONPAE.%{_target_cpu}
+# xenomai files; this should be in a macro
+%flavour_files xenomai
+%if %{with_nonpae}
+%flavour_files xenomai_nonpae
 %endif
 
 %if %{with_doc}
@@ -1005,6 +845,7 @@ fi
 - Disable non-rt build by default
 - Allow multiple flavours to BuildKernel, e.g. "NONPAE xenomai"
 - Wrap specfile lines to fix 80-char terminals
+- Macro functions to set up package, description, scripts, files, etc.
 
 * Fri Jan 11 2013 John Morris <john@zultron.com> - 3.5.3-1.el6
 - Back down to 3.5.3 to match I-pipe patch
