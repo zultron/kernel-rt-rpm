@@ -202,11 +202,11 @@ BuildConflicts: rhbuildsys(DiskFree) < 7Gb
 
 # Sources.
 Source0: ftp://ftp.kernel.org/pub/linux/kernel/v3.x/linux-%{LKAver}.tar.bz2
-Source1: config-%{version}-i686
-Source2: config-%{version}-i686-NONPAE
-Source3: config-%{version}-x86_64
-Source4: config-%{version}-xenomai-i686
-Source5: config-%{version}-xenomai-x86_64
+Source1: config-i686
+Source2: config-i686-NONPAE
+Source3: config-x86_64
+Source4: config-xenomai-i686
+Source5: config-xenomai-x86_64
 Source6: kconfigtool.py
 
 %description
@@ -358,7 +358,7 @@ pushd linux-%{version}-%{release}.%{_target_cpu} > /dev/null
 
 # copy raw configs to build directory
 mkdir configs
-cp $RPM_BUILD_DIR/config-%{version}-* configs
+cp $RPM_BUILD_DIR/config-* configs
 
 # apply i-pipe patch
 PATCH=%{_usrsrc}/xenomai/ipipe-core-%{xenomai_patch_version}.patch
@@ -372,20 +372,20 @@ BuildKernel() {
     # build flavour config files
     Dash_Flavour=""
     pushd configs
-    %{__cp} config-%{version}-%{_target_cpu} \
-        ../config-%{version}-%{_target_cpu}.intermediate
+    %{__cp} config-%{_target_cpu} \
+        ../config-%{_target_cpu}.intermediate
     for f in $*; do
 	%{__python} %{SOURCE6} -m \
-	  config-%{version}-${f}-%{_target_cpu} \
-	  ../config-%{version}${Dash_Flavour}-%{_target_cpu}.intermediate > \
-	  ../config-%{version}${Dash_Flavour}-${f}-%{_target_cpu}.intermediate
+	  config-${f}-%{_target_cpu} \
+	  ../config${Dash_Flavour}-%{_target_cpu}.intermediate > \
+	  ../config${Dash_Flavour}-${f}-%{_target_cpu}.intermediate
         Dash_Flavour="${Dash_Flavour}-${f}"
     done
     popd
     Flavour=${Dash_Flavour#-}
 
     # Select the correct flavour configuration file.
-    %{__cp} config-%{version}${Dash_Flavour}-%{_target_cpu}.intermediate \
+    %{__cp} config${Dash_Flavour}-%{_target_cpu}.intermediate \
 	.config
 
     %define KVRFA %{version}-%{release}${Flavour:+.$Flavour}.%{_target_cpu}
