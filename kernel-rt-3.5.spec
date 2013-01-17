@@ -388,7 +388,7 @@ BuildKernel() {
     %{__cp} config-%{version}${Dash_Flavour}-%{_target_cpu}.intermediate \
 	.config
 
-    %define KVRFA %{version}-%{release}${Flavour}.%{_target_cpu}
+    %define KVRFA %{version}-%{release}${Flavour:+.$Flavour}.%{_target_cpu}
 
     # Correctly set the EXTRAVERSION string in the main Makefile.
     EXTRAVERSION=-%{release}${Dash_Flavour//-/.}.%{_target_cpu}
