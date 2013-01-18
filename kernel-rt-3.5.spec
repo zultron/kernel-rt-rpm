@@ -268,6 +268,9 @@ of the OS: memory allocation, process allocation, device I/O, etc.\
 \
 %{expand:%%{?%{1}_flavour_description:%%%{1}_flavour_description}}\
 \
+\
+Xenomai patch version %{xenomai_patch_version}\
+\
 %package %{1}-devel\
 Summary: Development package for building kernel modules to match the %{?1:%{1} }kernel\
 Group: System Environment/Kernel\
