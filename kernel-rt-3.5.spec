@@ -66,6 +66,7 @@ up to 4GB of memory.
 %define with_headers 0
 %define with_perf 0
 %define with_vdso_install 0
+%define with_xeno 0
 %endif
 
 # Build only the 32-bit kernel-rt-headers package.
