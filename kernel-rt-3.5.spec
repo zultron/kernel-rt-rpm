@@ -4,9 +4,9 @@
 %define LKAver 3.5.7
 
 # Define the Xenomai and ipipe-core patch versions
-%define xenomai_version 2.6.3
+%define xenomai_version 2.6.2.1
 # testing; from ipipe-gch.git:  git diff v3.5.7..for-core-3.5.7
-%define xenomai_patch_version 3.5.7-x86-0.120109gitfde77b2e
+%define xenomai_patch_version 3.5.7-x86-0.120115git42cc05f3
 #%%define xenomai_patch_version 3.5.3-x86-2
 
 # Define the buildid, if required.
@@ -196,7 +196,7 @@ BuildRequires: elfutils-libelf-devel zlib-devel binutils-devel newt-devel
 BuildRequires: python-devel perl(ExtUtils::Embed) gtk2-devel bison 
 %endif
 BuildRequires: python
-BuildRequires: xenomai-devel >= %{xenomai_version}
+BuildRequires: xenomai-devel = %{xenomai_version}
 
 BuildConflicts: rhbuildsys(DiskFree) < 7Gb
 
@@ -838,10 +838,10 @@ fi
 %endif
 
 %changelog
-* Sun Jan 13 2013 John Morris <john@zultron.com> - 3.5.7-1
+* Sun Jan 18 2013 John Morris <john@zultron.com> - 3.5.7-1
 - Update to 3.5.7 for testing against Xenomai ipipe-gch.git
   for-core-3.5.7 branch
-- Update to xenomai_patch_version 3.5.7-x86-0.120112git5250eb
+- Update to xenomai_patch_version 3.5.7-x86-0.120115git42cc05f3
   - patch from ipipe-gch.git:  git diff v3.5.7..for-core-3.5.7
 - Rename package to kernel-rt
 - Build Xenomai as a flavour, kernel-rt-xenomai
