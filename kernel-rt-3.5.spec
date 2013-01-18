@@ -361,7 +361,7 @@ pushd linux-%{version}-%{release}.%{_target_cpu} > /dev/null
 
 # copy raw configs to build directory
 mkdir configs
-cp $RPM_BUILD_DIR/config-* configs
+cp $RPM_SOURCE_DIR/config-* configs
 
 # apply i-pipe patch
 PATCH=%{_usrsrc}/xenomai/ipipe-core-%{xenomai_patch_version}.patch
