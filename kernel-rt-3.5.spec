@@ -802,9 +802,11 @@ fi
 %endif
 
 # xenomai files; this should be in a macro
+%if %{with_xeno}
 %flavour_files xenomai
 %if %{with_nonpae}
 %flavour_files xenomai_nonpae
+%endif
 %endif
 
 %if %{with_doc}
