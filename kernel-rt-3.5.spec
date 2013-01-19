@@ -116,7 +116,7 @@ up to 4GB of memory.
 %endif
 
 # Set pkg_release.
-%define pkg_release 1%{?buildid}%{?dist}
+%define pkg_release 2%{?buildid}%{?dist}
 
 #
 # Three sets of minimum package version requirements in the form of Conflicts.
@@ -275,6 +275,9 @@ Xenomai patch version %{xenomai_patch_version}\
 %package %{1}-devel\
 Summary: Development package for building kernel modules to match the %{?1:%{1} }kernel\
 Group: System Environment/Kernel\
+Provides: kernel-devel-%{_target_cpu} = %{version}-%{release}\
+Provides: kernel-devel = %{version}-%{release}.%{1}\
+Provides: kernel-devel-uname-r = %{version}-%{release}.%{_target_cpu}\
 Provides: kernel-%{1}-devel-%{_target_cpu} = %{version}-%{release}\
 Provides: kernel-%{1}-devel = %{version}-%{release}.%{1}\
 Provides: kernel-%{1}-devel-uname-r = %{version}-%{release}.%{_target_cpu}\
@@ -841,6 +844,9 @@ fi
 %endif
 
 %changelog
+* Sat Jan 19 2013 John Morris <john@zultron.com> - 3.5.7-2
+- Fix Provides: in flavor-devel packages
+
 * Sun Jan 18 2013 John Morris <john@zultron.com> - 3.5.7-1
 - Update to 3.5.7 for testing against Xenomai ipipe-gch.git
   for-core-3.5.7 branch
