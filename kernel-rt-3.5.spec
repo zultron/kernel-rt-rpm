@@ -828,7 +828,7 @@ fi
 
 %changelog
 * Fri Jan 25 2013 John Morris <john@zultron.com> - 3.5.7-3
-- Update to 2.6.2.1 stable release
+- Update to 2.6.2.1 stable release and ipipe 3.5.7-x86-3
 - Minor config tweaks
 
 * Sat Jan 19 2013 John Morris <john@zultron.com> - 3.5.7-2
