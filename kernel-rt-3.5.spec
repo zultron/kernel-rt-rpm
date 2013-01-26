@@ -6,7 +6,7 @@
 # Define the Xenomai and ipipe-core patch versions
 %define xenomai_version 2.6.2.1
 # testing; from ipipe-gch.git:  git diff v3.5.7..for-core-3.5.7
-%define xenomai_patch_version 3.5.7-x86-0.120115git42cc05f3
+%define xenomai_patch_version 3.5.7-x86-3
 #%%define xenomai_patch_version 3.5.3-x86-2
 
 # Define the buildid, if required.
@@ -96,7 +96,7 @@
 %endif
 
 # Set pkg_release.
-%define pkg_release 2%{?buildid}%{?dist}
+%define pkg_release 3%{?buildid}%{?dist}
 
 #
 # Three sets of minimum package version requirements in the form of Conflicts.
@@ -827,6 +827,10 @@ fi
 %endif
 
 %changelog
+* Fri Jan 25 2013 John Morris <john@zultron.com> - 3.5.7-3
+- Update to 2.6.2.1 stable release
+- Minor config tweaks
+
 * Sat Jan 19 2013 John Morris <john@zultron.com> - 3.5.7-2
 - Fix Provides: in flavor-devel packages
 
