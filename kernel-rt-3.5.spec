@@ -15,26 +15,6 @@
 # Add flavours here; nonpae will be added automatically
 %global flavours xenomai
 
-# Flavours should add a summary
-%global xenomai_flavour_summary patched with Xenomai
-%global nonpae_flavour_summary for non-PAE CPUs
-%global xenomai_nonpae_flavour_summary patched with Xenomai for non-PAE CPUs
-
-# Flavours may add text for the description
-%global xenomai_flavour_description \
-This kernel is patched for the Xenomai real-time system.
-%global nonpae_flavour_summary \
-This package provides a version of the Linux kernel suitable for\
-processors without the Physical Address Extension (PAE) capability.\
-It can only address up to 4GB of memory.
-%global xenomai_nonpae_flavour_description \
-This kernel is patched for the Xenomai real-time system.\
-\
-This version of the Linux kernel is suitable for processors without\
-the Physical Address Extension (PAE) capability.  It can only address\
-up to 4GB of memory.
-
-
 
 # The following build options are enabled by default.
 # Use either --without <option> on your rpmbuild command line
@@ -150,6 +130,38 @@ up to 4GB of memory.
 %define initrd_prereq mkinitrd >= 6.0.61-1
 %endif
 
+# This takes the 'flavor' argument
+%define kernel_reqprovconf \
+Provides: kernel = %{version}-%{release}\
+Provides: kernel-%{_target_cpu} = %{version}-%{release}%{?1:.%{1}}\
+Provides: kernel%{?1:-%{1}} = %{version}-%{release}\
+Provides: kernel%{?1:-%{1}}-%{_target_cpu} = %{version}-%{release}%{?1:.%{1}}\
+Provides: kernel-drm = 4.3.0\
+Provides: kernel-drm-nouveau = 16\
+Provides: kernel-modeset = 1\
+Provides: kernel-uname-r = %{version}-%{release}.%{_target_cpu}\
+Provides: kernel-rt = %{version}-%{release}\
+Provides: kernel-rt-%{_target_cpu} = %{version}-%{release}%{?1:.%{1}}\
+Provides: kernel-rt%{?1:-%{1}} = %{version}-%{release}\
+Provides: kernel-rt%{?1:-%{1}}-%{_target_cpu} = %{version}-%{release}%{?1:.%{1}}\
+Provides: kernel-rt-drm = 4.3.0\
+Provides: kernel-rt-drm-nouveau = 16\
+Provides: kernel-rt-modeset = 1\
+Provides: kernel-rt-uname-r = %{version}-%{release}.%{_target_cpu}\
+Requires(pre): %{kernel_prereq}\
+Requires(pre): %{initrd_prereq}\
+Requires(post): /sbin/new-kernel-pkg\
+Requires(preun): /sbin/new-kernel-pkg\
+%{expand:%{?-r:Requires: %{-r*}}}\
+Conflicts: %{kernel_dot_org_conflicts}\
+Conflicts: %{package_conflicts}\
+Conflicts: %{kernel_headers_conflicts}\
+# We can't let RPM do the dependencies automatically because it'll then pick up\
+# a correct but undesirable perl dependency from the module headers which\
+# isn't required for the kernel-rt proper to function.\
+AutoReq: no\
+AutoProv: yes
+
 Name: kernel-rt
 Summary: The Linux kernel
 Group: System Environment/Kernel
@@ -159,30 +171,8 @@ Version: %{pkg_version}
 Release: %{pkg_release}
 ExclusiveArch: noarch i386 i686 x86_64
 ExclusiveOS: Linux
-Provides: kernel = %{version}-%{release}
-Provides: kernel-%{_target_cpu} = %{version}-%{release}
-Provides: kernel-drm = 4.3.0
-Provides: kernel-drm-nouveau = 16
-Provides: kernel-modeset = 1
-Provides: kernel-uname-r = %{version}-%{release}.%{_target_cpu}
-Provides: kernel-rt = %{version}-%{release}
-Provides: kernel-rt-%{_target_cpu} = %{version}-%{release}
-Provides: kernel-rt-drm = 4.3.0
-Provides: kernel-rt-drm-nouveau = 16
-Provides: kernel-rt-modeset = 1
-Provides: kernel-rt-uname-r = %{version}-%{release}.%{_target_cpu}
-Requires(pre): %{kernel_prereq}
-Requires(pre): %{initrd_prereq}
-Requires(post): /sbin/new-kernel-pkg
-Requires(preun): /sbin/new-kernel-pkg
-Conflicts: %{kernel_dot_org_conflicts}
-Conflicts: %{package_conflicts}
-Conflicts: %{kernel_headers_conflicts}
-# We can't let RPM do the dependencies automatically because it'll then pick up
-# a correct but undesirable perl dependency from the module headers which
-# isn't required for the kernel-rt proper to function.
-AutoReq: no
-AutoProv: yes
+
+%kernel_reqprovconf
 
 #
 # List the packages used during the kernel-rt build.
@@ -215,91 +205,84 @@ This package provides the Linux kernel (vmlinuz), the core of any
 Linux-based operating system. The kernel handles the basic functions
 of the OS: memory allocation, process allocation, device I/O, etc.
 
-%package devel
-Summary: Development package for building kernel modules to match the kernel.
-Group: System Environment/Kernel
-Provides: kernel-devel-%{_target_cpu} = %{version}-%{release}
-Provides: kernel-devel = %{version}-%{release}
-Provides: kernel-devel-uname-r = %{version}-%{release}.%{_target_cpu}
-Provides: kernel-rt-devel-%{_target_cpu} = %{version}-%{release}
-Provides: kernel-rt-devel = %{version}-%{release}
-Provides: kernel-rt-devel-uname-r = %{version}-%{release}.%{_target_cpu}
-Requires(pre): /usr/bin/find
-AutoReqProv: no
-%description devel
-This package provides the kernel header files and makefiles
-sufficient to build modules against the kernel package.
-
-%define flavour_package() \
-%package %{1}\
-Summary: The Linux kernel %{expand:%%{%{1}_flavour_summary}}\
+#
+# This macro creates a kernel-<subpackage>-devel package.
+#	%%kernel_devel_package <subpackage> <pretty-name>
+#
+%define kernel_devel_package() \
+%package %{?1:%{1}-}devel\
+Summary: Development package for building kernel modules to match the %{?2:%{2} }kernel\
 Group: System Environment/Kernel\
-Provides: kernel = %{version}-%{release}\
-Provides: kernel-%{_target_cpu} = %{version}-%{release}.%{1}\
-Provides: kernel-%{1} = %{version}-%{release}\
-Provides: kernel-%{1}-%{_target_cpu} = %{version}-%{release}.%{1}\
-Provides: kernel-drm = 4.3.0\
-Provides: kernel-drm-nouveau = 16\
-Provides: kernel-modeset = 1\
-Provides: kernel-uname-r = %{version}-%{release}.%{_target_cpu}\
-Provides: kernel-rt = %{version}-%{release}\
-Provides: kernel-rt-%{_target_cpu} = %{version}-%{release}.%{1}\
-Provides: kernel-rt-%{1} = %{version}-%{release}\
-Provides: kernel-rt-%{1}-%{_target_cpu} = %{version}-%{release}.%{1}\
-Provides: kernel-rt-drm = 4.3.0\
-Provides: kernel-rt-drm-nouveau = 16\
-Provides: kernel-rt-modeset = 1\
-Provides: kernel-rt-uname-r = %{version}-%{release}.%{_target_cpu}\
-Requires(pre): %{kernel_prereq}\
-Requires(pre): %{initrd_prereq}\
-Requires(post): /sbin/new-kernel-pkg\
-Requires(preun): /sbin/new-kernel-pkg\
-Conflicts: %{kernel_dot_org_conflicts}\
-Conflicts: %{package_conflicts}\
-Conflicts: %{kernel_headers_conflicts}\
-# We can't let RPM do the dependencies automatically because it'll then pick up\
-# a correct but undesirable perl dependency from the module headers which\
-# isn't required for the kernel-rt proper to function.\
-AutoReq: no\
-AutoProv: yes\
-%description %{1}\
-This package provides the Linux kernel (vmlinuz), the core of any\
-Linux-based operating system. The kernel handles the basic functions\
-of the OS: memory allocation, process allocation, device I/O, etc.\
-\
-%{expand:%%{?%{1}_flavour_description:%%%{1}_flavour_description}}\
-\
-\
-Xenomai patch version %{xenomai_patch_version}\
-\
-%package %{1}-devel\
-Summary: Development package for building kernel modules to match the %{?1:%{1} }kernel\
-Group: System Environment/Kernel\
-Provides: kernel-devel-%{_target_cpu} = %{version}-%{release}\
-Provides: kernel-devel = %{version}-%{release}.%{1}\
-Provides: kernel-devel-uname-r = %{version}-%{release}.%{_target_cpu}\
-Provides: kernel-%{1}-devel-%{_target_cpu} = %{version}-%{release}\
-Provides: kernel-%{1}-devel = %{version}-%{release}.%{1}\
-Provides: kernel-%{1}-devel-uname-r = %{version}-%{release}.%{_target_cpu}\
-Provides: kernel-rt-%{1}-devel-%{_target_cpu} = %{version}-%{release}\
-Provides: kernel-rt-%{1}-devel = %{version}-%{release}.%{1}\
-Provides: kernel-rt-%{1}-devel-uname-r = %{version}-%{release}.%{_target_cpu}\
-Requires(pre): /usr/bin/find\
+Provides: kernel%{?1:-%{1}}-devel-%{_target_cpu} = %{version}-%{release}\
+Provides: kernel-devel-%{_target_cpu} = %{version}-%{release}%{?1:.%{1}}\
+Provides: kernel-devel = %{version}-%{release}%{?1:.%{1}}\
+Provides: kernel-devel-uname-r = %{KVERREL}%{?1:.%{1}}\
+Provides: kernel%{?1:-%{1}}-devel-%{_target_cpu} = %{version}-%{release}\
+Provides: kernel%{?1:-%{1}}-devel = %{version}-%{release}.%{1}\
+Provides: kernel%{?1:-%{1}}-devel-uname-r = %{version}-%{release}.%{_target_cpu}\
+Provides: kernel-rt%{?1:-%{1}}-devel-%{_target_cpu} = %{version}-%{release}\
+Provides: kernel-rt%{?1:-%{1}}-devel = %{version}-%{release}.%{1}\
+Provides: kernel-rt%{?1:-%{1}}-devel-uname-r = %{version}-%{release}.%{_target_cpu}\
 AutoReqProv: no\
-%description %{1}-devel\
-This package provides the kernel header files and makefiles\
-sufficient to build modules against the %{?1:%{1} }kernel package.
+Requires(pre): /usr/bin/find\
+%description %{?1:%{1}-}devel\
+This package provides kernel headers and makefiles sufficient to build modules\
+against the %{?2:%{2} }kernel package.\
+%{nil}
+
+#
+# This macro creates a kernel-<subpackage> and its -devel too.
+#	%%define variant_summary The Linux kernel compiled for <configuration>
+#	%%kernel_variant_package [-n <pretty-name>] <subpackage>
+#
+%define kernel_variant_package(n:r:) \
+%package %1\
+Summary: %{variant_summary}\
+Group: System Environment/Kernel\
+%kernel_reqprovconf\
+%{expand:%%kernel_devel_package %1 %{!?-n:%1}%{?-n:%{-n*}}}\
+%{nil}
+
+
+# First the auxiliary packages of the main kernel package.
+%kernel_devel_package
+
 
 
 %if %{with_nonpae}
-%flavour_package NONPAE
+%define variant_summary The Linux kernel compiled without PAE support, 32-bit
+%kernel_variant_package -n NONPAE nonpae
+%description nonpae
+
+32-bit kernel with support for CPUs without (PAE), which can only
+address up to 4GB of memory.
 %endif
 
-# build xenomai; this should be in a macro
-%flavour_package xenomai
+
+
+%if %{with_xeno}
+%define xeno_requires xenomai = %{xenomai_version}
+%define variant_summary The Linux kernel with Xenomai real time system support
+%kernel_variant_package -n Xenomai -r %{xeno_requires} xenomai
+%description xenomai
+
+This kernel is patched for the Xenomai real-time system.
+
+
 %if %{with_nonpae}
-%flavour_package xenomai_nonpae
-%endif
+%define variant_summary The Linux kernel with Xenomai real time system support, non-PAE
+%kernel_variant_package -n Xenomai-NONPAE -r xenomai=%{xenomai_version} \
+    xenomai_nonpae
+
+%description xenomai_nonpae
+
+This kernel is patched for the Xenomai real-time system.
+
+32-bit kernel with support for CPUs without (PAE), which can only
+address up to 4GB of memory.
+%endif # with_nonpae
+%endif # with_xeno
+
 
 
 %if %{with_doc}
