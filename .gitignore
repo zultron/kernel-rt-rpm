@@ -6,3 +6,7 @@
 /kernel-rt-*/
 /x86_64/
 /kernel-rt-*.src.rpm
+
+# emacs droppings
+/\#*
+/.\#*
