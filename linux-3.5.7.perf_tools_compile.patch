@@ -1,3 +1,5 @@
+** Note:  first hunk of original patch doesn't apply; removed
+
 From patchwork Wed Jul 25 19:30:03 2012
 Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
@@ -60,21 +62,6 @@ the body of a message to majordomo@vger.kernel.org
 More majordomo info at  http://vger.kernel.org/majordomo-info.html
 Please read the FAQ at  http://www.tux.org/lkml/
 
-diff --git a/tools/perf/ui/browsers/hists.c b/tools/perf/ui/browsers/hists.c
-index 482f051..413bd62 100644
---- a/tools/perf/ui/browsers/hists.c
-+++ b/tools/perf/ui/browsers/hists.c
-@@ -978,8 +978,8 @@ static int hist_browser__dump(struct hist_browser *browser)
- 	fp = fopen(filename, "w");
- 	if (fp == NULL) {
- 		char bf[64];
--		strerror_r(errno, bf, sizeof(bf));
--		ui_helpline__fpush("Couldn't write to %s: %s", filename, bf);
-+		const char *err = strerror_r(errno, bf, sizeof(bf));
-+		ui_helpline__fpush("Couldn't write to %s: %s", filename, err);
- 		return -1;
- 	}
- 
 diff --git a/tools/perf/util/target.c b/tools/perf/util/target.c
 index 1064d5b..3f59c49 100644
 --- a/tools/perf/util/target.c
