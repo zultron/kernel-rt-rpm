@@ -96,7 +96,7 @@
 %endif
 
 # Set pkg_release.
-%define pkg_release 3%{?buildid}%{?dist}
+%define pkg_release 4%{?buildid}%{?dist}
 
 #
 # Three sets of minimum package version requirements in the form of Conflicts.
@@ -199,6 +199,12 @@ Source3: config-x86_64
 Source4: config-xenomai-i686
 Source5: config-xenomai-x86_64
 Source6: kconfigtool.py
+
+# Patches
+#
+# Fix a compile error for perf that shows up in fc18 (should be in
+# mainline since 2012-07) https://lkml.org/lkml/2012/7/25/485
+Patch0:  linux-3.5.7.perf_tools_compile.patch
 
 %description
 This package provides the Linux kernel (vmlinuz), the core of any
@@ -349,6 +355,9 @@ pushd linux-%{version}-%{release}.%{_target_cpu} > /dev/null
 # copy raw configs to build directory
 mkdir configs
 cp $RPM_SOURCE_DIR/config-* configs
+
+# apply RPM patches
+%patch0 -p1 -b .perf_tools_compile
 
 # apply i-pipe patch
 PATCH=%{_usrsrc}/xenomai/ipipe-core-%{xenomai_patch_version}.patch
@@ -827,6 +836,11 @@ fi
 %endif
 
 %changelog
+* Tue Feb 26 2013 John Morris <john@zultron.com> - 3.5.7-4
+- Add patch to fix compile error in perf on fc18; this patch looks to
+  be in upstream kernels since 2012-07, so hopefully can be removed
+  next release
+
 * Fri Jan 25 2013 John Morris <john@zultron.com> - 3.5.7-3
 - Update to 2.6.2.1 stable release and ipipe 3.5.7-x86-3
 - Minor config tweaks
