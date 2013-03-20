@@ -96,7 +96,7 @@
 %endif
 
 # Set pkg_release.
-%define pkg_release 4%{?buildid}%{?dist}
+%define pkg_release 5%{?buildid}%{?dist}
 
 #
 # Three sets of minimum package version requirements in the form of Conflicts.
@@ -493,9 +493,8 @@ hwcap 1 nosegneg"
     fi
     %{__mkdir_p} $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/include
     pushd include > /dev/null
-    %{__cp} -a acpi asm-generic config crypto drm generated keys linux \
-	math-emu media mtd net pcmcia rdma rxrpc scsi sound target trace \
-	video xen $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/include
+    # copy everything under include except Kbuild
+    %{__cp} -a [a-z]* $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/include
     popd > /dev/null
     # Make a hard-link from the include/linux/ directory to the
     # include/generated/autoconf.h file.
@@ -836,6 +835,9 @@ fi
 %endif
 
 %changelog
+* Tue Mar 19 2013 John Morris <john@zultron.com> - 3.5.7-5
+- Fix kernel headers to include ipipe and xenomai directories
+
 * Tue Feb 26 2013 John Morris <john@zultron.com> - 3.5.7-4
 - Add patch to fix compile error in perf on fc18; this patch looks to
   be in upstream kernels since 2012-07, so hopefully can be removed
