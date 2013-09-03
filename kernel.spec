@@ -249,7 +249,7 @@ address up to 4GB of memory.
 
 
 %if %{with_xeno}
-%define xeno_requires xenomai = %{xenomai_version}
+%define xeno_requires xenomai == %{xenomai_version}
 %define variant_summary The Linux kernel with Xenomai real time system support
 %kernel_variant_package -n Xenomai -r %{xeno_requires} xenomai
 %description xenomai
@@ -259,8 +259,7 @@ This kernel is patched for the Xenomai real-time system.
 
 %if %{with_nonpae}
 %define variant_summary The Linux kernel with Xenomai real time system support, non-PAE
-%kernel_variant_package -n Xenomai-NONPAE -r xenomai=%{xenomai_version} \
-    xenomai_nonpae
+%kernel_variant_package -n Xenomai-NONPAE -r %{xeno_requires} xenomai_nonpae
 
 %description xenomai_nonpae
 
