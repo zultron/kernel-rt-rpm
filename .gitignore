@@ -3,9 +3,9 @@
 
 # fedpkg build artifacts
 /.build-*.log
-/kernel-rt-*/
+/kernel-*/
 /x86_64/
-/kernel-rt-*.src.rpm
+/kernel-*.src.rpm
 
 # emacs droppings
 /\#*

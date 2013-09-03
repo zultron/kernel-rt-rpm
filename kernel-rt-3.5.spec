@@ -10,27 +10,23 @@
 #%%define xenomai_patch_version 3.5.3-x86-2
 
 # Define the buildid, if required.
-#define buildid .
-
-# Add flavours here; nonpae will be added automatically
-%global flavours xenomai
-
+%define buildid .xenomai
 
 # The following build options are enabled by default.
 # Use either --without <option> on your rpmbuild command line
 # or force the values to 0, here, to disable them.
 
-# PAE kernel-rt
+# PAE kernel
 %define with_std          %{?_without_std:          0} %{?!_without_std:          0}
-# NONPAE kernel-rt
+# NONPAE kernel
 %define with_nonpae       %{?_without_nonpae:       0} %{?!_without_nonpae:       0}
-# Xenomai kernel-rt
+# Xenomai kernel
 %define with_xeno         %{?_without_xeno:         0} %{?!_without_xeno:         1}
-# kernel-rt-doc
+# kernel-doc
 %define with_doc          %{?_without_doc:          0} %{?!_without_doc:          1}
-# kernel-rt-headers
+# kernel-headers
 %define with_headers      %{?_without_headers:      0} %{?!_without_headers:      1}
-# kernel-rt-firmware
+# kernel-firmware
 %define with_firmware     %{?_without_firmware:     0} %{?!_without_firmware:     1}
 # perf subpackage
 %define with_perf         %{?_without_perf:         0} %{?!_without_perf:         1}
@@ -39,7 +35,7 @@
 # use dracut instead of mkinitrd
 %define with_dracut       %{?_without_dracut:       0} %{?!_without_dracut:       1}
 
-# Build only the kernel-rt-doc & kernel-rt-firmware packages.
+# Build only the kernel-doc & kernel-firmware packages.
 %ifarch noarch
 %define with_std 0
 %define with_nonpae 0
@@ -49,7 +45,7 @@
 %define with_xeno 0
 %endif
 
-# Build only the 32-bit kernel-rt-headers package.
+# Build only the 32-bit kernel-headers package.
 %ifarch i386
 %define with_std 0
 %define with_nonpae 0
@@ -59,14 +55,14 @@
 %define with_vdso_install 0
 %endif
 
-# Build only the 32-bit kernel-rt packages.
+# Build only the 32-bit kernel packages.
 %ifarch i686
 %define with_doc 0
 %define with_headers 0
 %define with_firmware 0
 %endif
 
-# Build only the 64-bit kernel-rt-headers & kernel-rt packages.
+# Build only the 64-bit kernel-headers & kernel packages.
 %ifarch x86_64
 %define with_nonpae 0
 %define with_doc 0
@@ -96,7 +92,7 @@
 %endif
 
 # Set pkg_release.
-%define pkg_release 5%{?buildid}%{?dist}
+%define pkg_release 6%{?buildid}%{?dist}
 
 #
 # Three sets of minimum package version requirements in the form of Conflicts.
@@ -133,21 +129,14 @@
 # This takes the 'flavor' argument
 %define kernel_reqprovconf \
 Provides: kernel = %{version}-%{release}\
-Provides: kernel-%{_target_cpu} = %{version}-%{release}%{?1:.%{1}}\
 Provides: kernel%{?1:-%{1}} = %{version}-%{release}\
+Provides: kernel-%{_target_cpu} = %{version}-%{release}%{?1:.%{1}}\
 Provides: kernel%{?1:-%{1}}-%{_target_cpu} = %{version}-%{release}%{?1:.%{1}}\
+Provides: kernel-uname-r = %{version}-%{release}.%{_target_cpu}\
+Provides: kernel%{?1:-%{1}}-uname-r = %{version}-%{release}.%{_target_cpu}\
 Provides: kernel-drm = 4.3.0\
 Provides: kernel-drm-nouveau = 16\
 Provides: kernel-modeset = 1\
-Provides: kernel-uname-r = %{version}-%{release}.%{_target_cpu}\
-Provides: kernel-rt = %{version}-%{release}\
-Provides: kernel-rt-%{_target_cpu} = %{version}-%{release}%{?1:.%{1}}\
-Provides: kernel-rt%{?1:-%{1}} = %{version}-%{release}\
-Provides: kernel-rt%{?1:-%{1}}-%{_target_cpu} = %{version}-%{release}%{?1:.%{1}}\
-Provides: kernel-rt-drm = 4.3.0\
-Provides: kernel-rt-drm-nouveau = 16\
-Provides: kernel-rt-modeset = 1\
-Provides: kernel-rt-uname-r = %{version}-%{release}.%{_target_cpu}\
 Requires(pre): %{kernel_prereq}\
 Requires(pre): %{initrd_prereq}\
 Requires(post): /sbin/new-kernel-pkg\
@@ -158,11 +147,11 @@ Conflicts: %{package_conflicts}\
 Conflicts: %{kernel_headers_conflicts}\
 # We can't let RPM do the dependencies automatically because it'll then pick up\
 # a correct but undesirable perl dependency from the module headers which\
-# isn't required for the kernel-rt proper to function.\
+# isn't required for the kernel proper to function.\
 AutoReq: no\
 AutoProv: yes
 
-Name: kernel-rt
+Name: kernel
 Summary: The Linux kernel
 Group: System Environment/Kernel
 License: GPLv2
@@ -175,7 +164,7 @@ ExclusiveOS: Linux
 %kernel_reqprovconf
 
 #
-# List the packages used during the kernel-rt build.
+# List the packages used during the kernel build.
 #
 BuildRequires: module-init-tools, patch >= 2.5.4, bash >= 2.03, sh-utils, tar
 BuildRequires: bzip2, findutils, gzip, m4, perl, make >= 3.78, diffutils, gawk
@@ -219,16 +208,9 @@ of the OS: memory allocation, process allocation, device I/O, etc.
 %package %{?1:%{1}-}devel\
 Summary: Development package for building kernel modules to match the %{?2:%{2} }kernel\
 Group: System Environment/Kernel\
+Provides: kernel%{?1:-%{1}}-devel = %{version}-%{release}\
 Provides: kernel%{?1:-%{1}}-devel-%{_target_cpu} = %{version}-%{release}\
-Provides: kernel-devel-%{_target_cpu} = %{version}-%{release}%{?1:.%{1}}\
-Provides: kernel-devel = %{version}-%{release}%{?1:.%{1}}\
-Provides: kernel-devel-uname-r = %{KVERREL}%{?1:.%{1}}\
-Provides: kernel%{?1:-%{1}}-devel-%{_target_cpu} = %{version}-%{release}\
-Provides: kernel%{?1:-%{1}}-devel = %{version}-%{release}.%{1}\
 Provides: kernel%{?1:-%{1}}-devel-uname-r = %{version}-%{release}.%{_target_cpu}\
-Provides: kernel-rt%{?1:-%{1}}-devel-%{_target_cpu} = %{version}-%{release}\
-Provides: kernel-rt%{?1:-%{1}}-devel = %{version}-%{release}.%{1}\
-Provides: kernel-rt%{?1:-%{1}}-devel-uname-r = %{version}-%{release}.%{_target_cpu}\
 AutoReqProv: no\
 Requires(pre): /usr/bin/find\
 %description %{?1:%{1}-}devel\
@@ -426,7 +408,7 @@ BuildKernel() {
     %{__make} -s ARCH=%{buildarch} INSTALL_MOD_PATH=$RPM_BUILD_ROOT \
 	vdso_install KERNELRELEASE=%{KVRFA}
     if grep '^CONFIG_XEN=y$' .config > /dev/null; then
-      echo > ldconfig-kernel-rt.conf "\
+      echo > ldconfig-kernel.conf "\
 # This directive teaches ldconfig to search in nosegneg subdirectories
 # and cache the DSOs there with extra bit 0 set in their hwcap match
 # fields.  In Xen guest kernels, the vDSO tells the dynamic linker to
@@ -434,12 +416,12 @@ BuildKernel() {
 # in the ld.so.cache file.
 hwcap 1 nosegneg"
     fi
-    if [ ! -s ldconfig-kernel-rt.conf ]; then
-      echo > ldconfig-kernel-rt.conf "\
+    if [ ! -s ldconfig-kernel.conf ]; then
+      echo > ldconfig-kernel.conf "\
 # Placeholder file, no vDSO hwcap entries used in this kernel."
     fi
-    %{__install} -D -m 444 ldconfig-kernel-rt.conf \
-	$RPM_BUILD_ROOT/etc/ld.so.conf.d/kernel-rt-%{KVRFA}.conf
+    %{__install} -D -m 444 ldconfig-kernel.conf \
+	$RPM_BUILD_ROOT/etc/ld.so.conf.d/kernel-%{KVRFA}.conf
 %endif
 
     # Save the headers/makefiles, etc, for building modules against.
@@ -683,15 +665,15 @@ if [ $? -ne 0 ]; then\
     NEWKERNARGS="--kernel-args=\"crashkernel=auto\""\
 fi\
 %if %{with_dracut}\
-/sbin/new-kernel-pkg --package kernel-rt%{?1:-%{1}} --mkinitrd --dracut \\\
+/sbin/new-kernel-pkg --package kernel%{?1:-%{1}} --mkinitrd --dracut \\\
     --depmod --update %{version}-%{release}%{?1:.%{1}}.%{_target_cpu} \\\
     $NEWKERNARGS || exit $?\
 %else\
-/sbin/new-kernel-pkg --package kernel-rt%{?1:-%{1}} --mkinitrd \\\
+/sbin/new-kernel-pkg --package kernel%{?1:-%{1}} --mkinitrd \\\
     --depmod --update %{version}-%{release}%{?1:.%{1}}.%{_target_cpu} \\\
     $NEWKERNARGS || exit $?\
 %endif\
-/sbin/new-kernel-pkg --package kernel-rt%{?1:-%{1}} --rpmposttrans \\\
+/sbin/new-kernel-pkg --package kernel%{?1:-%{1}} --rpmposttrans \\\
     %{version}-%{release}%{?1:.%{1}}.%{_target_cpu} || exit $?\
 if [ -x /sbin/weak-modules ]; then\
     /sbin/weak-modules --add-kernel \\\
@@ -705,7 +687,7 @@ fi\
 %post %{?1}\
 if [ `uname -i` == "i386" ] && [ -f /etc/sysconfig/kernel ]; then\
     /bin/sed -r -i -e \\\
-        's/^DEFAULTKERNEL=kernel-rt.*/DEFAULTKERNEL=kernel-rt%{?1:-%{1}}/' \\\
+        's/^DEFAULTKERNEL=kernel.*/DEFAULTKERNEL=kernel%{?1:-%{1}}/' \\\
 	/etc/sysconfig/kernel || exit $?\
 fi\
 if test "%{1/nonpae/}" = "%{1}"; then  # not PAE\
@@ -714,7 +696,7 @@ if test "%{1/nonpae/}" = "%{1}"; then  # not PAE\
       /bin/sed -i '/^hwcap 0 nosegneg$/ s/0/1/' /etc/ld.so.conf.d/kernel-*.conf\
   fi\
 fi\
-/sbin/new-kernel-pkg --package kernel-rt%{?1:-%{1}} --install \\\
+/sbin/new-kernel-pkg --package kernel%{?1:-%{1}} --install \\\
     %{version}-%{release}%{?1:.%{1}}.%{_target_cpu} || exit $?\
 \
 %preun %{?1}\
@@ -774,7 +756,7 @@ fi
 /lib/modules/%{version}-%{release}%{?1:.%{1}}.%{_target_cpu}/weak-updates\
 %ifarch %{vdso_arches}\
 /lib/modules/%{version}-%{release}%{?1:.%{1}}.%{_target_cpu}/vdso\
-/etc/ld.so.conf.d/kernel-rt-%{version}-%{release}%{?1:.%{1}}.%{_target_cpu}.conf\
+/etc/ld.so.conf.d/kernel-%{version}-%{release}%{?1:.%{1}}.%{_target_cpu}.conf\
 %endif\
 /lib/modules/%{version}-%{release}%{?1:.%{1}}.%{_target_cpu}/modules.*\
 %if %{with_dracut}\
@@ -835,6 +817,10 @@ fi
 %endif
 
 %changelog
+* Tue Sep  3 2013 John Morris <john@zultron.com> - 3.5.7-6
+- Rename package from kernel-rt back to kernel
+- Set buildid to '.xenomai'
+
 * Tue Mar 19 2013 John Morris <john@zultron.com> - 3.5.7-5
 - Fix kernel headers to include ipipe and xenomai directories
 
