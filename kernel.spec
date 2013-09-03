@@ -17,9 +17,9 @@
 # or force the values to 0, here, to disable them.
 
 # PAE kernel
-%define with_std          %{?_without_std:          0} %{?!_without_std:          0}
+%define with_std          %{?_without_std:          0} %{?!_without_std:          1}
 # NONPAE kernel
-%define with_nonpae       %{?_without_nonpae:       0} %{?!_without_nonpae:       0}
+%define with_nonpae       %{?_without_nonpae:       0} %{?!_without_nonpae:       1}
 # Xenomai kernel
 %define with_xeno         %{?_without_xeno:         0} %{?!_without_xeno:         1}
 # kernel-doc
