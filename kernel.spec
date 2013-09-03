@@ -12,6 +12,13 @@
 # Define the buildid, if required.
 %define buildid .xenomai
 
+# Temporarily disable parts of build for testing
+%define _without_std 1
+%define _without_nonpae 1
+%define _without_doc 1
+%define _without_firmware 1
+%define _without_perf 1
+
 # The following build options are enabled by default.
 # Use either --without <option> on your rpmbuild command line
 # or force the values to 0, here, to disable them.
