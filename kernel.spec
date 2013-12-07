@@ -347,8 +347,12 @@ cp $RPM_SOURCE_DIR/config-* configs
 # (none right now)
 
 # apply Xenomai patches
+ARCH=%{_target_cpu}
+# during doc builds, pick an arbitrary arch
+test %{_target_cpu} = noarch && ARCH=i686
+
 /usr/src/xenomai/scripts/prepare-kernel.sh --linux=`pwd` \
-    --ipipe=%{ipipe_patch} --arch=%{_target_cpu}
+    --ipipe=%{ipipe_patch} --arch=$ARCH
 
 popd > /dev/null
 
