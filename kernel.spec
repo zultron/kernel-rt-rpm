@@ -1,13 +1,14 @@
 %global __spec_install_pre %{___build_pre}
 
 # Define the version of the Linux Kernel Archive tarball.
-%define LKAver 3.5.7
+%define LKAver 3.8.13
 
-# Define the Xenomai and ipipe-core patch versions
-%define xenomai_version 2.6.2.1
-# testing; from ipipe-gch.git:  git diff v3.5.7..for-core-3.5.7
-%define xenomai_patch_version 3.5.7-x86-3
-#%%define xenomai_patch_version 3.5.3-x86-2
+# Find the Xenomai ipipe patch matching this kernel
+%define ipipe_patchdir /usr/src/xenomai/ksrc/arch/x86/patches
+%define ipipe_patch %(echo %{ipipe_patchdir}/ipipe-core-%{LKAver}-*)
+
+# Define the Xenomai version
+%define xenomai_version %(rpm -q --qf='%{version}' xenomai-devel)
 
 # Define the buildid, if required.
 %define buildid .xenomai
@@ -99,7 +100,7 @@
 %endif
 
 # Set pkg_release.
-%define pkg_release 6%{?buildid}%{?dist}
+%define pkg_release 1%{?buildid}%{?dist}
 
 #
 # Three sets of minimum package version requirements in the form of Conflicts.
@@ -183,7 +184,7 @@ BuildRequires: elfutils-libelf-devel zlib-devel binutils-devel newt-devel
 BuildRequires: python-devel perl(ExtUtils::Embed) gtk2-devel bison 
 %endif
 BuildRequires: python
-BuildRequires: xenomai-devel = %{xenomai_version}
+BuildRequires: xenomai-devel
 
 BuildConflicts: rhbuildsys(DiskFree) < 7Gb
 
@@ -198,9 +199,7 @@ Source6: kconfigtool.py
 
 # Patches
 #
-# Fix a compile error for perf that shows up in fc18 (should be in
-# mainline since 2012-07) https://lkml.org/lkml/2012/7/25/485
-Patch0:  linux-3.5.7.perf_tools_compile.patch
+# (none right now)
 
 %description
 This package provides the Linux kernel (vmlinuz), the core of any
@@ -345,11 +344,12 @@ mkdir configs
 cp $RPM_SOURCE_DIR/config-* configs
 
 # apply RPM patches
-%patch0 -p1 -b .perf_tools_compile
+# (none right now)
 
-# apply i-pipe patch
-PATCH=%{_usrsrc}/xenomai/ipipe-core-%{xenomai_patch_version}.patch
-patch -p1 -s < $PATCH
+# apply Xenomai patches
+/usr/src/xenomai/scripts/prepare-kernel.sh --linux=`pwd` \
+    --ipipe=%{ipipe_patch} --arch=%{_target_cpu}
+
 popd > /dev/null
 
 %build
@@ -823,6 +823,13 @@ fi
 %endif
 
 %changelog
+* Fri Dec  6 2013 John Morris <john@zultron.com> - 3.8.13-1
+- update to Linux 3.8.13 for Xenomai 2.6.3 release
+- update method of applying the Xenomai patch, changed in this release
+- don't specify xenomai-devel release explicitly
+- find ipipe patch automatically
+- remove fc18 perf patch; accepted upstream
+
 * Tue Sep  3 2013 John Morris <john@zultron.com> - 3.5.7-6
 - Rename package from kernel-rt back to kernel
 - Set buildid to '.xenomai'
