@@ -826,6 +826,7 @@ fi
 * Fri Dec  6 2013 John Morris <john@zultron.com> - 3.8.13-1
 - update to Linux 3.8.13 for Xenomai 2.6.3 release
 - update method of applying the Xenomai patch, changed in this release
+- updated kernel config files from fedora kernel git rev c64afb6
 - don't specify xenomai-devel release explicitly
 - find ipipe patch automatically
 - remove fc18 perf patch; accepted upstream
