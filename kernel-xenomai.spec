@@ -1,24 +1,37 @@
 %global __spec_install_pre %{___build_pre}
 
 # Define the version of the Linux Kernel Archive tarball.
-%define LKAver 3.5.5
+%define LKAver 3.8.13
+
+# Define the Xenomai version
+%{expand: %%define xenomai_version %(rpm -q --qf='%%{version}' xenomai-devel)}
+
+# Find the Xenomai ipipe patch matching this kernel
+%define ipipe_patchdir /usr/src/xenomai/ksrc/arch/x86/patches
+%{expand: %%define ipipe_patch %(echo %{ipipe_patchdir}/ipipe-core-%{LKAver}-*)}
 
 # Define the buildid, if required.
-#define buildid .
+%define buildid .xeno
+
+# Temporarily disable parts of build for testing
+%define _without_nonpae 1
+%define _without_doc 1
+%define _without_firmware 1
+%define _without_perf 1
 
 # The following build options are enabled by default.
 # Use either --without <option> on your rpmbuild command line
 # or force the values to 0, here, to disable them.
 
-# PAE kernel-ml
+# PAE kernel-xenomai
 %define with_std          %{?_without_std:          0} %{?!_without_std:          1}
-# NONPAE kernel-ml
+# NONPAE kernel-xenomai
 %define with_nonpae       %{?_without_nonpae:       0} %{?!_without_nonpae:       1}
-# kernel-ml-doc
+# kernel-xenomai-doc
 %define with_doc          %{?_without_doc:          0} %{?!_without_doc:          1}
-# kernel-ml-headers
+# kernel-xenomai-headers
 %define with_headers      %{?_without_headers:      0} %{?!_without_headers:      1}
-# kernel-ml-firmware
+# kernel-xenomai-firmware
 %define with_firmware     %{?_without_firmware:     0} %{?!_without_firmware:     1}
 # perf subpackage
 %define with_perf         %{?_without_perf:         0} %{?!_without_perf:         1}
@@ -27,7 +40,7 @@
 # use dracut instead of mkinitrd
 %define with_dracut       %{?_without_dracut:       0} %{?!_without_dracut:       1}
 
-# Build only the kernel-ml-doc & kernel-ml-firmware packages.
+# Build only the kernel-xenomai-doc & kernel-xenomai-firmware packages.
 %ifarch noarch
 %define with_std 0
 %define with_nonpae 0
@@ -36,7 +49,7 @@
 %define with_vdso_install 0
 %endif
 
-# Build only the 32-bit kernel-ml-headers package.
+# Build only the 32-bit kernel-xenomai-headers package.
 %ifarch i386
 %define with_std 0
 %define with_nonpae 0
@@ -46,14 +59,14 @@
 %define with_vdso_install 0
 %endif
 
-# Build only the 32-bit kernel-ml packages.
+# Build only the 32-bit kernel-xenomai packages.
 %ifarch i686
 %define with_doc 0
 %define with_headers 0
 %define with_firmware 0
 %endif
 
-# Build only the 64-bit kernel-ml-headers & kernel-ml packages.
+# Build only the 64-bit kernel-xenomai-headers & kernel-xenomai packages.
 %ifarch x86_64
 %define with_nonpae 0
 %define with_doc 0
@@ -83,7 +96,7 @@
 %endif
 
 # Set pkg_release.
-%define pkg_release 1%{?buildid}%{?dist}
+%define pkg_release 4%{?buildid}%{?dist}
 
 #
 # Three sets of minimum package version requirements in the form of Conflicts.
@@ -117,8 +130,8 @@
 %define initrd_prereq mkinitrd >= 6.0.61-1
 %endif
 
-Name: kernel-ml
-Summary: The Linux kernel. (The core of any Linux-based operating system.)
+Name: kernel-xenomai
+Summary: The Linux kernel with Xenomai realtime extensions
 Group: System Environment/Kernel
 License: GPLv2
 URL: http://www.kernel.org/
@@ -132,27 +145,28 @@ Provides: kernel-drm = 4.3.0
 Provides: kernel-drm-nouveau = 16
 Provides: kernel-modeset = 1
 Provides: kernel-uname-r = %{version}-%{release}.%{_target_cpu}
-Provides: kernel-ml = %{version}-%{release}
-Provides: kernel-ml-%{_target_cpu} = %{version}-%{release}
-Provides: kernel-ml-drm = 4.3.0
-Provides: kernel-ml-drm-nouveau = 16
-Provides: kernel-ml-modeset = 1
-Provides: kernel-ml-uname-r = %{version}-%{release}.%{_target_cpu}
+Provides: %{name} = %{version}-%{release}
+Provides: %{name}-%{_target_cpu} = %{version}-%{release}
+Provides: %{name}-drm = 4.3.0
+Provides: %{name}-drm-nouveau = 16
+Provides: %{name}-modeset = 1
+Provides: %{name}-uname-r = %{version}-%{release}.%{_target_cpu}
 Requires(pre): %{kernel_prereq}
 Requires(pre): %{initrd_prereq}
 Requires(post): /sbin/new-kernel-pkg
 Requires(preun): /sbin/new-kernel-pkg
+Requires: xenomai = %{xenomai_version}
 Conflicts: %{kernel_dot_org_conflicts}
 Conflicts: %{package_conflicts}
 Conflicts: %{kernel_headers_conflicts}
 # We can't let RPM do the dependencies automatically because it'll then pick up
 # a correct but undesirable perl dependency from the module headers which
-# isn't required for the kernel-ml proper to function.
+# isn't required for the kernel-xenomai proper to function.
 AutoReq: no
 AutoProv: yes
 
 #
-# List the packages used during the kernel-ml build.
+# List the packages used during the kernel-xenomai build.
 #
 BuildRequires: module-init-tools, patch >= 2.5.4, bash >= 2.03, sh-utils, tar
 BuildRequires: bzip2, findutils, gzip, m4, perl, make >= 3.78, diffutils, gawk
@@ -162,21 +176,28 @@ BuildRequires: xmlto, asciidoc
 %if %{with_perf}
 BuildRequires: elfutils-libelf-devel zlib-devel binutils-devel newt-devel
 BuildRequires: python-devel perl(ExtUtils::Embed) gtk2-devel bison 
+BuildRequires: libunwind-devel
 %endif
 BuildRequires: python
+BuildRequires: xenomai-devel
 
 BuildConflicts: rhbuildsys(DiskFree) < 7Gb
 
 # Sources.
 Source0: ftp://ftp.kernel.org/pub/linux/kernel/v3.x/linux-%{LKAver}.tar.bz2
-Source1: config-%{version}-i686
-Source2: config-%{version}-i686-NONPAE
-Source3: config-%{version}-x86_64
+Source1: config-i686
+Source2: config-i686-NONPAE
+Source3: config-x86_64
+Source4: config-xenomai-i686
+Source5: config-xenomai-x86_64
+Source6: kconfigtool.py
 
 %description
 This package provides the Linux kernel (vmlinuz), the core of any
 Linux-based operating system. The kernel handles the basic functions
 of the OS: memory allocation, process allocation, device I/O, etc.
+
+This kernel is patched with the Xenomai realtime extensions.
 
 %package devel
 Summary: Development package for building kernel modules to match the kernel.
@@ -184,14 +205,16 @@ Group: System Environment/Kernel
 Provides: kernel-devel-%{_target_cpu} = %{version}-%{release}
 Provides: kernel-devel = %{version}-%{release}
 Provides: kernel-devel-uname-r = %{version}-%{release}.%{_target_cpu}
-Provides: kernel-ml-devel-%{_target_cpu} = %{version}-%{release}
-Provides: kernel-ml-devel = %{version}-%{release}
-Provides: kernel-ml-devel-uname-r = %{version}-%{release}.%{_target_cpu}
+Provides: %{name}-devel-%{_target_cpu} = %{version}-%{release}
+Provides: %{name}-devel = %{version}-%{release}
+Provides: %{name}-devel-uname-r = %{version}-%{release}.%{_target_cpu}
 Requires(pre): /usr/bin/find
 AutoReqProv: no
 %description devel
 This package provides the kernel header files and makefiles
 sufficient to build modules against the kernel package.
+
+This kernel is patched with the Xenomai realtime extensions.
 
 %if %{with_nonpae}
 %package NONPAE
@@ -205,14 +228,14 @@ Provides: kernel-drm = 4.3.0
 Provides: kernel-drm-nouveau = 16
 Provides: kernel-modeset = 1
 Provides: kernel-uname-r = %{version}-%{release}.%{_target_cpu}
-Provides: kernel-ml = %{version}-%{release}
-Provides: kernel-ml-%{_target_cpu} = %{version}-%{release}NONPAE
-Provides: kernel-ml-NONPAE = %{version}-%{release}
-Provides: kernel-ml-NONPAE-%{_target_cpu} = %{version}-%{release}NONPAE
-Provides: kernel-ml-drm = 4.3.0
-Provides: kernel-ml-drm-nouveau = 16
-Provides: kernel-ml-modeset = 1
-Provides: kernel-ml-uname-r = %{version}-%{release}.%{_target_cpu}
+Provides: %{name} = %{version}-%{release}
+Provides: %{name}-%{_target_cpu} = %{version}-%{release}NONPAE
+Provides: %{name}-NONPAE = %{version}-%{release}
+Provides: %{name}-NONPAE-%{_target_cpu} = %{version}-%{release}NONPAE
+Provides: %{name}-drm = 4.3.0
+Provides: %{name}-drm-nouveau = 16
+Provides: %{name}-modeset = 1
+Provides: %{name}-uname-r = %{version}-%{release}.%{_target_cpu}
 Requires(pre): %{kernel_prereq}
 Requires(pre): %{initrd_prereq}
 Requires(post): /sbin/new-kernel-pkg
@@ -222,7 +245,7 @@ Conflicts: %{package_conflicts}
 Conflicts: %{kernel_headers_conflicts}
 # We can't let RPM do the dependencies automatically because it'll then pick up
 # a correct but undesirable perl dependency from the module headers which
-# isn't required for the kernel-ml proper to function.
+# isn't required for the kernel-xenomai proper to function.
 AutoReq: no
 AutoProv: yes
 %description NONPAE
@@ -230,20 +253,24 @@ This package provides a version of the Linux kernel suitable for
 processors without the Physical Address Extension (PAE) capability.
 It can only address up to 4GB of memory.
 
+This kernel is patched with the Xenomai realtime extensions.
+
 %package NONPAE-devel
 Summary: Development package for building kernel modules to match the non-PAE kernel.
 Group: System Environment/Kernel
 Provides: kernel-NONPAE-devel-%{_target_cpu} = %{version}-%{release}
 Provides: kernel-NONPAE-devel = %{version}-%{release}NONPAE
 Provides: kernel-NONPAE-devel-uname-r = %{version}-%{release}.%{_target_cpu}
-Provides: kernel-ml-NONPAE-devel-%{_target_cpu} = %{version}-%{release}
-Provides: kernel-ml-NONPAE-devel = %{version}-%{release}NONPAE
-Provides: kernel-ml-NONPAE-devel-uname-r = %{version}-%{release}.%{_target_cpu}
+Provides: %{name}-NONPAE-devel-%{_target_cpu} = %{version}-%{release}
+Provides: %{name}-NONPAE-devel = %{version}-%{release}NONPAE
+Provides: %{name}-NONPAE-devel-uname-r = %{version}-%{release}.%{_target_cpu}
 Requires(pre): /usr/bin/find
 AutoReqProv: no
 %description NONPAE-devel
 This package provides the kernel header files and makefiles
 sufficient to build modules against the kernel package.
+
+This kernel is patched with the Xenomai realtime extensions.
 %endif
 
 %if %{with_doc}
@@ -306,9 +333,23 @@ This package provides the perf tool and the supporting documentation.
 %setup -q -n %{name}-%{version} -c
 %{__mv} linux-%{LKAver} linux-%{version}-%{release}.%{_target_cpu}
 pushd linux-%{version}-%{release}.%{_target_cpu} > /dev/null
-%{__cp} %{SOURCE1} .
-%{__cp} %{SOURCE2} .
-%{__cp} %{SOURCE3} .
+# Kernel configs:
+# Overlay i686-NONPAE config snippet onto i686 config
+%{SOURCE6} -m %{SOURCE2} %{SOURCE1} >> $(basename %{SOURCE2}).merge
+# Overlay Xenomai config snippets onto vanilla configs
+%{SOURCE6} -m %{SOURCE4} %{SOURCE1} >> $(basename %{SOURCE1})
+%{SOURCE6} -m %{SOURCE4} $(basename %{SOURCE2}).merge \
+	   >> $(basename %{SOURCE2})
+%{SOURCE6} -m %{SOURCE5} %{SOURCE3} >> $(basename %{SOURCE3})
+
+# apply Xenomai patches
+ARCH=%{_target_cpu}
+# during doc builds, pick an arbitrary arch
+test %{_target_cpu} = noarch && ARCH=i686
+
+/usr/src/xenomai/scripts/prepare-kernel.sh --linux=`pwd` \
+    --ipipe=%{ipipe_patch} --arch=$ARCH
+
 popd > /dev/null
 
 %build
@@ -319,9 +360,9 @@ BuildKernel() {
 
     # Select the correct flavour configuration file.
     if [ -z "${Flavour}" ]; then
-      %{__cp} config-%{version}-%{_target_cpu} .config
+      %{__cp} config-%{_target_cpu} .config
     else
-      %{__cp} config-%{version}-%{_target_cpu}-${Flavour} .config
+      %{__cp} config-%{_target_cpu}-${Flavour} .config
     fi
 
     %define KVRFA %{version}-%{release}${Flavour}.%{_target_cpu}
@@ -356,7 +397,7 @@ BuildKernel() {
 %ifarch %{vdso_arches}
     %{__make} -s ARCH=%{buildarch} INSTALL_MOD_PATH=$RPM_BUILD_ROOT vdso_install KERNELRELEASE=%{KVRFA}
     if grep '^CONFIG_XEN=y$' .config > /dev/null; then
-      echo > ldconfig-kernel-ml.conf "\
+      echo > ldconfig-%{name}.conf "\
 # This directive teaches ldconfig to search in nosegneg subdirectories
 # and cache the DSOs there with extra bit 0 set in their hwcap match
 # fields.  In Xen guest kernels, the vDSO tells the dynamic linker to
@@ -364,11 +405,12 @@ BuildKernel() {
 # in the ld.so.cache file.
 hwcap 1 nosegneg"
     fi
-    if [ ! -s ldconfig-kernel-ml.conf ]; then
-      echo > ldconfig-kernel-ml.conf "\
+    if [ ! -s ldconfig-%{name}.conf ]; then
+      echo > ldconfig-%{name}.conf "\
 # Placeholder file, no vDSO hwcap entries used in this kernel."
     fi
-    %{__install} -D -m 444 ldconfig-kernel-ml.conf $RPM_BUILD_ROOT/etc/ld.so.conf.d/kernel-ml-%{KVRFA}.conf
+    %{__install} -D -m 444 ldconfig-%{name}.conf \
+        $RPM_BUILD_ROOT/etc/ld.so.conf.d/%{name}-%{KVRFA}.conf
 %endif
 
     # Save the headers/makefiles, etc, for building modules against.
@@ -418,7 +460,8 @@ hwcap 1 nosegneg"
     fi
     %{__mkdir_p} $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/include
     pushd include > /dev/null
-    %{__cp} -a acpi asm-generic config crypto drm generated keys linux math-emu media mtd net pcmcia rdma rxrpc scsi sound target trace video xen $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/include
+    # copy everything under include except Kbuild
+    %{__cp} -a [a-z]* $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/include
     popd > /dev/null
     # Make a hard-link from the include/linux/ directory to the include/generated/autoconf.h file.
     /bin/ln $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/include/generated/autoconf.h $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/include/linux/
@@ -427,7 +470,8 @@ hwcap 1 nosegneg"
     # Now ensure that the Makefile, .config, version.h, autoconf.h and auto.conf files
     # all have matching timestamps so that external modules can be built.
     touch -r $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/Makefile $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/.config
-    touch -r $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/Makefile $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/include/linux/version.h
+    touch -r $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/Makefile \
+        $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/include/generated/uapi/linux/version.h
     touch -r $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/Makefile $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/include/linux/autoconf.h
     touch -r $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/Makefile $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build/include/config/auto.conf
 
@@ -580,11 +624,16 @@ if [ $? -ne 0 ]; then
         NEWKERNARGS="--kernel-args=\"crashkernel=auto\""
 fi
 %if %{with_dracut}
-/sbin/new-kernel-pkg --package kernel-ml --mkinitrd --dracut --depmod --update %{version}-%{release}.%{_target_cpu} $NEWKERNARGS || exit $?
+/sbin/new-kernel-pkg --package %{name} \
+    --mkinitrd --dracut --depmod --update \
+    %{version}-%{release}.%{_target_cpu} $NEWKERNARGS || exit $?
 %else
-/sbin/new-kernel-pkg --package kernel-ml --mkinitrd --depmod --update %{version}-%{release}.%{_target_cpu} $NEWKERNARGS || exit $?
+/sbin/new-kernel-pkg --package %{name} \
+    --mkinitrd --depmod --update \
+    %{version}-%{release}.%{_target_cpu} $NEWKERNARGS || exit $?
 %endif
-/sbin/new-kernel-pkg --package kernel-ml --rpmposttrans %{version}-%{release}.%{_target_cpu} || exit $?
+/sbin/new-kernel-pkg --package %{name} \
+    --rpmposttrans %{version}-%{release}.%{_target_cpu} || exit $?
 if [ -x /sbin/weak-modules ]; then
     /sbin/weak-modules --add-kernel %{version}-%{release}.%{_target_cpu} || exit $?
 fi
@@ -595,12 +644,14 @@ fi
 
 %post
 if [ `uname -i` == "i386" ] && [ -f /etc/sysconfig/kernel ]; then
-    /bin/sed -r -i -e 's/^DEFAULTKERNEL=kernel-ml-NONPAE$/DEFAULTKERNEL=kernel-ml/' /etc/sysconfig/kernel || exit $?
+    /bin/sed -r -i -e \
+      's/^DEFAULTKERNEL=%{name}-NONPAE$/DEFAULTKERNEL=%{name}/' \
+      /etc/sysconfig/kernel || exit $?
 fi
 if grep --silent '^hwcap 0 nosegneg$' /etc/ld.so.conf.d/kernel-*.conf 2> /dev/null; then
     /bin/sed -i '/^hwcap 0 nosegneg$/ s/0/1/' /etc/ld.so.conf.d/kernel-*.conf
 fi
-/sbin/new-kernel-pkg --package kernel-ml --install %{version}-%{release}.%{_target_cpu} || exit $?
+/sbin/new-kernel-pkg --package %{name} --install %{version}-%{release}.%{_target_cpu} || exit $?
 
 %preun
 /sbin/new-kernel-pkg --rminitrd --rmmoddep --remove %{version}-%{release}.%{_target_cpu} || exit $?
@@ -633,11 +684,16 @@ if [ $? -ne 0 ]; then
     NEWKERNARGS="--kernel-args=\"crashkernel=auto\""
 fi
 %if %{with_dracut}
-/sbin/new-kernel-pkg --package kernel-ml-NONPAE --mkinitrd --dracut --depmod --update %{version}-%{release}NONPAE.%{_target_cpu} $NEWKERNARGS || exit $?
+/sbin/new-kernel-pkg --package %{name}-NONPAE \
+    --mkinitrd --dracut --depmod --update \
+    %{version}-%{release}NONPAE.%{_target_cpu} $NEWKERNARGS || exit $?
 %else
-/sbin/new-kernel-pkg --package kernel-ml-NONPAE --mkinitrd --depmod --update %{version}-%{release}NONPAE.%{_target_cpu} $NEWKERNARGS || exit $?
+/sbin/new-kernel-pkg --package %{name}-NONPAE \
+    --mkinitrd --depmod --update \
+    %{version}-%{release}NONPAE.%{_target_cpu} $NEWKERNARGS || exit $?
 %endif
-/sbin/new-kernel-pkg --package kernel-ml-NONPAE --rpmposttrans %{version}-%{release}NONPAE.%{_target_cpu} || exit $?
+/sbin/new-kernel-pkg --package %{name}-NONPAE \
+    --rpmposttrans %{version}-%{release}NONPAE.%{_target_cpu} || exit $?
 if [ -x /sbin/weak-modules ]; then
     /sbin/weak-modules --add-kernel %{version}-%{release}NONPAE.%{_target_cpu} || exit $?
 fi
@@ -648,9 +704,12 @@ fi
 
 %post NONPAE
 if [ `uname -i` == "i386" ] && [ -f /etc/sysconfig/kernel ]; then
-    /bin/sed -r -i -e 's/^DEFAULTKERNEL=kernel-ml$/DEFAULTKERNEL=kernel-ml-NONPAE/' /etc/sysconfig/kernel || exit $?
+    /bin/sed -r -i -e \
+    's/^DEFAULTKERNEL=%{name}$/DEFAULTKERNEL=%{name}-NONPAE/' \
+    /etc/sysconfig/kernel || exit $?
 fi
-/sbin/new-kernel-pkg --package kernel-ml-NONPAE --install %{version}-%{release}NONPAE.%{_target_cpu} || exit $?
+/sbin/new-kernel-pkg --package %{name}-NONPAE \
+    --install %{version}-%{release}NONPAE.%{_target_cpu} || exit $?
 
 %preun NONPAE
 /sbin/new-kernel-pkg --rminitrd --rmmoddep --remove %{version}-%{release}NONPAE.%{_target_cpu} || exit $?
@@ -692,7 +751,7 @@ fi
 /lib/modules/%{version}-%{release}.%{_target_cpu}/weak-updates
 %ifarch %{vdso_arches}
 /lib/modules/%{version}-%{release}.%{_target_cpu}/vdso
-/etc/ld.so.conf.d/kernel-ml-%{version}-%{release}.%{_target_cpu}.conf
+/etc/ld.so.conf.d/%{name}-%{version}-%{release}.%{_target_cpu}.conf
 %endif
 /lib/modules/%{version}-%{release}.%{_target_cpu}/modules.*
 %if %{with_dracut}
@@ -723,7 +782,7 @@ fi
 /lib/modules/%{version}-%{release}NONPAE.%{_target_cpu}/weak-updates
 %ifarch %{vdso_arches}
 /lib/modules/%{version}-%{release}NONPAE.%{_target_cpu}/vdso
-/etc/ld.so.conf.d/kernel-ml-%{version}-%{release}NONPAE.%{_target_cpu}.conf
+/etc/ld.so.conf.d/%{name}-%{version}-%{release}NONPAE.%{_target_cpu}.conf
 %endif
 /lib/modules/%{version}-%{release}NONPAE.%{_target_cpu}/modules.*
 %if %{with_dracut}
@@ -770,6 +829,24 @@ fi
 %endif
 
 %changelog
+* Sun Dec 22 2013 John Morris <john@zultron.com> - 3.8.13-1
+- Rework to add Xenomai extensions on 3.8.13 kernel:
+- Rename package to kernel-xenomai
+- Add Requires: and BuildRequires: for Xenomai
+- Patch kernel with Xenomai
+- Disable extra packages
+- Configs:
+  - Rename config files without version numbers
+  - Update config files for new kernel
+    - from fedora kernel pkg, c64afb6932e514f1dc75f0520d1fc00a9b5c2e70
+    - tweak for added options
+  - Add kconfigtool.py; add specfile code to merge specfiles
+- Other:
+  - Update README
+  - Add README.kernel-config
+  - .gitignore fedpkg local build artifacts
+
+
 * Thu Oct 04 2012 Alan Bartlett <ajb@elrepo.org> - 3.5.5-1.el6.elrepo
 - Updated to the 3.5.5 version source tarball.
 
