@@ -87,13 +87,6 @@ CONFIG_XENO_OPT_TIMER_LIST=y
 CONFIG_XENO_HW_FPU=y
 
 #
-# SMI workaround
-#
-# CONFIG_XENO_HW_SMI_DETECT_DISABLE is not set
-CONFIG_XENO_HW_SMI_DETECT=y
-# CONFIG_XENO_HW_SMI_WORKAROUND is not set
-
-#
 # Interfaces
 #
 CONFIG_XENO_SKIN_NATIVE=y
@@ -225,19 +218,6 @@ CONFIG_IPIPE_LEGACY=y
 # Tips and tricks setting up your x86 kernel; see
 # http://www.xenomai.org/index.php/FAQs#Tips_and_tricks_setting_up_your_x86_kernel
 #
-# This tries to disable System Management Interrupts on Intel
-# chipsets. These interrupts run at higher priority than Xenomai core
-# code or even the I-pipe layer. So they can cause high latencies to
-# the real-time jobs (up to miliseconds). ATTENTION: On some systems,
-# SMI may be involved in thermal throttling of the CPU. Thus,
-# switching it off can cause hardware damage in overheat situations.
-#
-# Don't enable this by default
-# http://www.xenomai.org/pipermail/xenomai/2013-January/027292.html
-# Hopefully upstream will make this a run-time option; until then,
-# use smictrl
-# CONFIG_XENO_HW_SMI_WORKAROUND is not set
-#
 # Just like CONFIG_ACPI_PROCESSOR, this idle driver sends the CPU into
 # deep C states, also causing huge latencies because the APIC timer
 # that Xenomai uses may not fire anymore.
@@ -272,13 +252,3 @@ CONFIG_NR_CPUS=256
 # invalid opcode: 0000 [#2] SMP 
 # http://www.xenomai.org/pipermail/xenomai-help/2011-06/msg00197.html
 # CONFIG_TRANSPARENT_HUGEPAGE is not set
-#
-# Gilles says this improves latencies
-# http://www.xenomai.org/pipermail/xenomai/2013-January/027272.html
-# CONFIG_FTRACE is not set
-# This apparently depends on !FTRACE
-# CONFIG_KMEMCHECK is not set
-#
-# gpio-pch is broken
-# http://www.xenomai.org/pipermail/xenomai/2013-January/027365.html
-# CONFIG_GPIO_PCH is not set
