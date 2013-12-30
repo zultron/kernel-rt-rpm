@@ -199,6 +199,8 @@ of the OS: memory allocation, process allocation, device I/O, etc.
 
 This kernel is patched with the Xenomai realtime extensions.
 
+***FIXME*** ipipe-tracer temporarily enabled ***FIXME***
+
 %package devel
 Summary: Development package for building kernel modules to match the kernel.
 Group: System Environment/Kernel

@@ -267,19 +267,26 @@ CONFIG_NR_CPUS=256
 # CONFIG_DEBUG_KERNEL is not set
 #
 # ##########
-# Debugging:  Enable I-pipe tracer
-# Normally, these should be disabled
+# I-pipe tracer
+# http://www.xenomai.org/index.php/I-pipe:Tracer
 #
-# CONFIG_IPIPE_DEBUG=y
-# CONFIG_IPIPE_TRACE=y
-# # 'Freeze on panic' option
-# CONFIG_IPIPE_TRACE_PANIC=y
-# # increase the number of backtrace points
-# CONFIG_IPIPE_TRACE_SHIFT=15
-# # answers for other IPIPE_DEBUG questions (defaults)
-# CONFIG_IPIPE_DEBUG_CONTEXT=y
-# CONFIG_IPIPE_DEBUG_INTERNAL=y
-# CONFIG_IPIPE_TRACE_ENABLE=y
-# CONFIG_IPIPE_TRACE_MCOUNT=y
-# CONFIG_IPIPE_TRACE_IRQSOFF=y
-# CONFIG_IPIPE_TRACE_VMALLOC=n
+# The following may be commented out to disable.  Tests are needed to
+# determine what the latency costs of IPIPE_TRACE=y but
+# IPIPE_TRACE_ENABLE is not set, compared with IPIPE_TRACE is not set.
+# http://www.xenomai.org/pipermail/xenomai/2014-January/029832.html
+#
+# Enable at runtime:  echo 1 > /proc/ipipe/trace/enable
+#
+CONFIG_IPIPE_DEBUG=y
+CONFIG_IPIPE_TRACE=y
+# CONFIG_IPIPE_TRACE_ENABLE is not set
+# 'Freeze on panic' option
+CONFIG_IPIPE_TRACE_PANIC=y
+# increase the number of backtrace points
+CONFIG_IPIPE_TRACE_SHIFT=15
+CONFIG_IPIPE_TRACE_MCOUNT=y
+CONFIG_IPIPE_TRACE_IRQSOFF=y
+CONFIG_IPIPE_TRACE_VMALLOC=n
+# answers for other IPIPE_DEBUG questions
+# CONFIG_IPIPE_DEBUG_CONTEXT is not set
+# CONFIG_IPIPE_DEBUG_INTERNAL is not set
