@@ -4,8 +4,6 @@
 # hopefully, create a working configuration for a Xenomai-patched
 # kernel.
 #
-# This config is not yet tested on i386 arch on any distro.
-#
 #
 # General problem options; see
 # http://www.xenomai.org/documentation/xenomai-2.6/html/TROUBLESHOOTING/index.html#kconf
@@ -233,6 +231,7 @@ CONFIG_IPIPE_LEGACY=y
 # and dependent option
 # CONFIG_KMEMCHECK is not set
 #
+# ##########
 # CONFIG_CPUMASK_OFFSTACK disables functions that pass cpumasks on
 # the stack.  Xenomai uses set_cpus_allowed(), which takes a cpumask
 # as an argument, in many places.  Disable this config and related
@@ -247,8 +246,38 @@ CONFIG_IPIPE_LEGACY=y
 # not to like when CONFIG_MAXSMP is off
 CONFIG_NR_CPUS=8
 #
+# ##########
 # Jan's fix for x86 arch kernel oops:
 # kernel BUG at mm/mmap.c:2313!
 # invalid opcode: 0000 [#2] SMP 
 # http://www.xenomai.org/pipermail/xenomai-help/2011-06/msg00197.html
 # CONFIG_TRANSPARENT_HUGEPAGE is not set
+#
+# ##########
+# Disable LOCKDEP
+#
+# http://www.xenomai.org/pipermail/xenomai/2013-December/029732.html
+# complains about hardirqs being on in the timer interrupt, but once
+# LOCKDEP is disabled (which involves disabling several options), the
+# system runs fine
+#
+# DEBUG_KERNEL off de-selects LOCKDEP; no other changes needed
+# CONFIG_DEBUG_KERNEL is not set
+#
+# ##########
+# I-pipe tracer
+# Uncomment the following to debug i-pipe
+#
+# CONFIG_IPIPE_DEBUG=y
+# CONFIG_IPIPE_TRACE=y
+# # 'Freeze on panic' option
+# CONFIG_IPIPE_TRACE_PANIC=y
+# # increase the number of backtrace points
+# CONFIG_IPIPE_TRACE_SHIFT=15
+# # answers for other IPIPE_DEBUG questions (defaults)
+# CONFIG_IPIPE_DEBUG_CONTEXT=y
+# CONFIG_IPIPE_DEBUG_INTERNAL=y
+# CONFIG_IPIPE_TRACE_ENABLE=y
+# CONFIG_IPIPE_TRACE_MCOUNT=y
+# CONFIG_IPIPE_TRACE_IRQSOFF=y
+# CONFIG_IPIPE_TRACE_VMALLOC=n
