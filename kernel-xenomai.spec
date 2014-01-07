@@ -96,7 +96,7 @@
 %endif
 
 # Set pkg_release.
-%define pkg_release 4%{?buildid}%{?dist}
+%define pkg_release 5%{?buildid}%{?dist}
 
 #
 # Three sets of minimum package version requirements in the form of Conflicts.
@@ -522,7 +522,7 @@ hwcap 1 nosegneg"
     # Move the development files out of the /lib/modules/ file system.
     %{__mkdir_p} $RPM_BUILD_ROOT/usr/src/kernels
     %{__mv} $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build $RPM_BUILD_ROOT/usr/src/kernels/%{KVRFA}
-    %{__ln_s} -f ../../../usr/src/kernels/%{KVRFA} $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build
+    %{__ln_s} -f /usr/src/kernels/%{KVRFA} $RPM_BUILD_ROOT/lib/modules/%{KVRFA}/build
 }
 
 %{__rm} -rf $RPM_BUILD_ROOT
@@ -829,6 +829,9 @@ fi
 %endif
 
 %changelog
+* Tue Jan  7 2014 John Morris <john@zultron.com> - 3.8.13-5
+- Fix /lib/modules/`uname -r`/build link for Fedora:  /lib->/usr/lib
+
 * Sun Dec 22 2013 John Morris <john@zultron.com> - 3.8.13-1
 - Rework to add Xenomai extensions on 3.8.13 kernel:
 - Rename package to kernel-xenomai
