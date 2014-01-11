@@ -96,7 +96,7 @@
 %endif
 
 # Set pkg_release.
-%define pkg_release 5%{?buildid}%{?dist}
+%define pkg_release 6%{?buildid}%{?dist}
 
 #
 # Three sets of minimum package version requirements in the form of Conflicts.
@@ -829,7 +829,11 @@ fi
 %endif
 
 %changelog
-* Tue Jan  7 2014 John Morris <john@zultron.com> - 3.8.13-5
+* Fri Jan 10 2014 John Morris <john@zultron.com> - 3.8.13-6
+- config-xenomai-*:
+  - Disable LOCKDEP
+  - Add disabled i-pipe trace config
+  - Remove outdated options
 - Fix /lib/modules/`uname -r`/build link for Fedora:  /lib->/usr/lib
 
 * Sun Dec 22 2013 John Morris <john@zultron.com> - 3.8.13-1
