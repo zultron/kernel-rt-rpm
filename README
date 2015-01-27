@@ -1,13 +1,22 @@
 This is a fork of the ELRepo kernel-ml git repository, patched for the
 Xenomai real time framework.
 
-Only el6 is supported.  The package requires the xenomai-devel package
-for the Xenomai patches.
+The package requires the xenomai-devel package for the Xenomai
+patches.
 
-This package is experimental.  After any new build or install on any
-new machine, please run the regression tests:
+To build in OBS, edit the [project configuration][1]:
 
-sudo xeno-regression-test -l "/usr/lib64/xenomai/dohell \
-        -m /tmp 100" -t 2
+    osc meta prjconf -e
 
-Be sure to check dmesg for kernel OOPSes or any problems
+And ensure the `kernel-headers` package is installed and
+`kernel-xenomai-headers` is ignored:
+
+    %if 0%{?fedora} || 0%{?rhel_version} || 0%{?centos_version}
+    # Keep kernel-headers package when building kernel
+    Keep: kernel-headers
+    Support: kernel-headers
+    Prefer: -kernel-xenomai-headers
+    %endif
+
+
+[1]:  https://en.opensuse.org/openSUSE:Build_Service_prjconf
