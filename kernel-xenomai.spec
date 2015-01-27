@@ -4,11 +4,19 @@
 %define LKAver 3.8.13
 
 # Define the Xenomai version
-%{expand: %%define xenomai_version %(rpm -q --qf='%%{version}' xenomai-devel)}
+%define xenomai_version 2.6.3
+
+# Find the asm arch
+%ifarch i386 i586 i686 x86_64
+%define asmarch x86
+%endif
+%ifarch armv7l
+%define asmarch arm
+%endif
 
 # Find the Xenomai ipipe patch matching this kernel
-%define ipipe_patchdir /usr/src/xenomai/ksrc/arch/x86/patches
-%{expand: %%define ipipe_patch %(echo %{ipipe_patchdir}/ipipe-core-%{LKAver}-*)}
+%define ipipe_patchdir /usr/src/xenomai/ksrc/arch/%{asmarch}/patches
+%define ipipe_patch %{ipipe_patchdir}/ipipe-core-%{LKAver}-%{asmarch}-*.patch
 
 # Define the buildid, if required.
 %define buildid .xeno
@@ -60,7 +68,7 @@
 %endif
 
 # Build only the 32-bit kernel-xenomai packages.
-%ifarch i686
+%ifarch i586 i686
 %define with_doc 0
 %define with_headers 0
 %define with_firmware 0
@@ -73,18 +81,18 @@
 %define with_firmware 0
 %endif
 
-# Define the asmarch.
-%define asmarch x86
-
 # Define the correct buildarch.
 %define buildarch x86_64
-%ifarch i386 i686
+%ifarch i386 i586 i686
 %define buildarch i386
+%endif
+%ifarch armv7l
+%define buildarch armv7l
 %endif
 
 # Define the vdso_arches.
 %if %{with_vdso_install}
-%define vdso_arches i686 x86_64
+%define vdso_arches i586 i686 x86_64
 %endif
 
 # Determine the sublevel number and set pkg_version.
@@ -96,7 +104,7 @@
 %endif
 
 # Set pkg_release.
-%define pkg_release 6%{?buildid}%{?dist}
+%define pkg_release 7%{?buildid}%{?dist}
 
 #
 # Three sets of minimum package version requirements in the form of Conflicts.
@@ -137,7 +145,7 @@ License: GPLv2
 URL: http://www.kernel.org/
 Version: %{pkg_version}
 Release: %{pkg_release}
-ExclusiveArch: noarch i386 i686 x86_64
+ExclusiveArch: noarch i386 i586 i686 x86_64
 ExclusiveOS: Linux
 Provides: kernel = %{version}-%{release}
 Provides: kernel-%{_target_cpu} = %{version}-%{release}
@@ -174,8 +182,8 @@ BuildRequires: gcc >= 3.4.2, binutils >= 2.12, redhat-rpm-config
 BuildRequires: net-tools, patchutils, rpm-build >= 4.8.0-7
 BuildRequires: xmlto, asciidoc
 %if %{with_perf}
-BuildRequires: elfutils-libelf-devel zlib-devel binutils-devel newt-devel
-BuildRequires: python-devel perl(ExtUtils::Embed) gtk2-devel bison 
+BuildRequires: elfutils-libelf-devel, zlib-devel, binutils-devel, newt-devel
+BuildRequires: python-devel, perl(ExtUtils::Embed), gtk2-devel, bison 
 BuildRequires: libunwind-devel
 %endif
 BuildRequires: python
@@ -184,7 +192,7 @@ BuildRequires: xenomai-devel
 BuildConflicts: rhbuildsys(DiskFree) < 7Gb
 
 # Sources.
-Source0: ftp://ftp.kernel.org/pub/linux/kernel/v3.x/linux-%{LKAver}.tar.bz2
+Source0: ftp://ftp.kernel.org/pub/linux/kernel/v3.x/linux-%{LKAver}.tar.xz
 Source1: config-i686
 Source2: config-i686-NONPAE
 Source3: config-x86_64
@@ -335,12 +343,12 @@ This package provides the perf tool and the supporting documentation.
 pushd linux-%{version}-%{release}.%{_target_cpu} > /dev/null
 # Kernel configs:
 # Overlay i686-NONPAE config snippet onto i686 config
-%{SOURCE6} -m %{SOURCE2} %{SOURCE1} >> $(basename %{SOURCE2}).merge
+python %{SOURCE6} -m %{SOURCE2} %{SOURCE1} >> $(basename %{SOURCE2}).merge
 # Overlay Xenomai config snippets onto vanilla configs
-%{SOURCE6} -m %{SOURCE4} %{SOURCE1} >> $(basename %{SOURCE1})
-%{SOURCE6} -m %{SOURCE4} $(basename %{SOURCE2}).merge \
+python %{SOURCE6} -m %{SOURCE4} %{SOURCE1} >> $(basename %{SOURCE1})
+python %{SOURCE6} -m %{SOURCE4} $(basename %{SOURCE2}).merge \
 	   >> $(basename %{SOURCE2})
-%{SOURCE6} -m %{SOURCE5} %{SOURCE3} >> $(basename %{SOURCE3})
+python %{SOURCE6} -m %{SOURCE5} %{SOURCE3} >> $(basename %{SOURCE3})
 
 # apply Xenomai patches
 ARCH=%{_target_cpu}
@@ -348,7 +356,7 @@ ARCH=%{_target_cpu}
 test %{_target_cpu} = noarch && ARCH=i686
 
 /usr/src/xenomai/scripts/prepare-kernel.sh --linux=`pwd` \
-    --ipipe=%{ipipe_patch} --arch=$ARCH
+    --ipipe=%{ipipe_patch} --arch=$ARCH --verbose
 
 popd > /dev/null
 
@@ -386,7 +394,7 @@ BuildKernel() {
     dd if=/dev/zero of=$RPM_BUILD_ROOT/boot/initrd-%{KVRFA}.img bs=1M count=5
 %endif
 
-    %{__cp} arch/x86/boot/bzImage $RPM_BUILD_ROOT/boot/vmlinuz-%{KVRFA}
+    %{__cp} arch/%{asmarch}/boot/bzImage $RPM_BUILD_ROOT/boot/vmlinuz-%{KVRFA}
     %{__chmod} 755 $RPM_BUILD_ROOT/boot/vmlinuz-%{KVRFA}
 
     %{__mkdir_p} $RPM_BUILD_ROOT/lib/modules/%{KVRFA}
@@ -829,6 +837,11 @@ fi
 %endif
 
 %changelog
+* Tue Jan 27 2015 John Morris <john@zultron.com> - 3.8.13-7
+- Update to Xenomai 2.6.3
+- Prepare for armv7l builds
+- Prepare for OBS (no %%(); i586 arch)
+
 * Fri Jan 10 2014 John Morris <john@zultron.com> - 3.8.13-6
 - config-xenomai-*:
   - Disable LOCKDEP

@@ -1,11 +1,14 @@
 # sources
-/linux-*.tar.bz2
+/linux-*.tar.xz
 
 # fedpkg build artifacts
 /.build-*.log
 /kernel-*/
 /x86_64/
 /kernel-*.src.rpm
+
+# OSC
+/.osc/
 
 # emacs droppings
 /\#*
